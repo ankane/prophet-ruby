@@ -18,9 +18,9 @@ class ProphetTest < Minitest::Test
 
     m = Prophet.new
     m.fit(df, seed: 123)
-    assert_equal 8004.75, m.params["lp__"][0]
-    assert_equal -0.359494, m.params["k"][0]
-    assert_equal 0.626234, m.params["m"][0]
+    assert_in_delta 8004.75, m.params["lp__"][0]
+    assert_in_delta -0.359494, m.params["k"][0]
+    assert_in_delta 0.626234, m.params["m"][0]
 
     future = m.make_future_dataframe(periods: 365)
     assert_equal ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2).map(&:to_s)
@@ -45,9 +45,9 @@ class ProphetTest < Minitest::Test
     m = Prophet.new(growth: "logistic")
     m.fit(df, seed: 123)
 
-    assert_equal 7750.6, m.params["lp__"][0]
-    assert_equal 0.0514968, m.params["k"][0]
-    assert_equal 94.2344, m.params["m"][0]
+    assert_in_delta 7750.6, m.params["lp__"][0]
+    assert_in_delta 0.0514968, m.params["k"][0]
+    assert_in_delta 94.2344, m.params["m"][0]
 
     future = m.make_future_dataframe(periods: 365)
     future["cap"] = 1000
@@ -69,9 +69,9 @@ class ProphetTest < Minitest::Test
     m.add_country_holidays("US")
     m.fit(df, seed: 123)
 
-    assert_equal 8040.81, m.params["lp__"][0]
+    assert_in_delta 8040.81, m.params["lp__"][0]
     assert_in_delta -0.36428, m.params["k"][0]
-    assert_equal 0.626888, m.params["m"][0]
+    assert_in_delta 0.626888, m.params["m"][0]
 
     assert m.train_holiday_names
 
@@ -94,8 +94,8 @@ class ProphetTest < Minitest::Test
     m = Prophet.new(mcmc_samples: 3)
     m.fit(df, seed: 123)
     params = m.params
-    assert_equal [963.497, 1006.49], m.params["lp__"][0..1].to_a
-    assert_equal [7.84723, 7.84723], m.params["stepsize__"][0..1].to_a
+    assert_elements_in_delta [963.497, 1006.49], m.params["lp__"][0..1].to_a
+    assert_elements_in_delta [7.84723, 7.84723], m.params["stepsize__"][0..1].to_a
   end
 
   def test_custom_seasonality
