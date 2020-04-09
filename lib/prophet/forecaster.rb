@@ -1,0 +1,986 @@
+module Prophet
+  class Forecaster
+    include Holidays
+    include Plot
+
+    attr_reader :logger, :params, :train_holiday_names
+
+    def initialize(
+      growth: "linear",
+      changepoints: nil,
+      n_changepoints: 25,
+      changepoint_range: 0.8,
+      yearly_seasonality: "auto",
+      weekly_seasonality: "auto",
+      daily_seasonality: "auto",
+      holidays: nil,
+      seasonality_mode: "additive",
+      seasonality_prior_scale: 10.0,
+      holidays_prior_scale: 10.0,
+      changepoint_prior_scale: 0.05,
+      mcmc_samples: 0,
+      interval_width: 0.80,
+      uncertainty_samples: 1000
+    )
+      @growth = growth
+
+      @changepoints = to_datetime(changepoints)
+      if !@changepoints.nil?
+        @n_changepoints = @changepoints.size
+        @specified_changepoints = true
+      else
+        @n_changepoints = n_changepoints
+        @specified_changepoints = false
+      end
+
+      @changepoint_range = changepoint_range
+      @yearly_seasonality = yearly_seasonality
+      @weekly_seasonality = weekly_seasonality
+      @daily_seasonality = daily_seasonality
+      @holidays = holidays
+
+      @seasonality_mode = seasonality_mode
+      @seasonality_prior_scale = seasonality_prior_scale.to_f
+      @changepoint_prior_scale = changepoint_prior_scale.to_f
+      @holidays_prior_scale = holidays_prior_scale.to_f
+
+      @mcmc_samples = mcmc_samples
+      @interval_width = interval_width
+      @uncertainty_samples = uncertainty_samples
+
+      # Set during fitting or by other methods
+      @start = nil
+      @y_scale = nil
+      @logistic_floor = false
+      @t_scale = nil
+      @changepoints_t = nil
+      @seasonalities = {}
+      @extra_regressors = {}
+      @country_holidays = nil
+      @stan_fit = nil
+      @params = {}
+      @history = nil
+      @history_dates = nil
+      @train_component_cols = nil
+      @component_modes = nil
+      @train_holiday_names = nil
+      @fit_kwargs = {}
+      validate_inputs
+
+      @logger = ::Logger.new($stderr)
+      @logger.formatter = proc do |severity, datetime, progname, msg|
+        "[prophet] #{msg}\n"
+      end
+      @stan_backend = StanBackend.new(@logger)
+    end
+
+    def validate_inputs
+      if !["linear", "logistic"].include?(@growth)
+        raise ArgumentError, "Parameter \"growth\" should be \"linear\" or \"logistic\"."
+      end
+      if @changepoint_range < 0 || @changepoint_range > 1
+        raise ArgumentError, "Parameter \"changepoint_range\" must be in [0, 1]"
+      end
+      if @holidays
+        if !@holidays.is_a?(Daru::DataFrame) && @holidays.vectors.include?("ds") && @holidays.vectors.include?("holiday")
+          raise ArgumentError, "holidays must be a DataFrame with \"ds\" and \"holiday\" columns."
+        end
+        @holidays["ds"] = to_datetime(@holidays["ds"])
+        has_lower = @holidays.vectors.include?("lower_window")
+        has_upper = @holidays.vectors.include?("upper_window")
+        if has_lower ^ has_upper # xor
+          raise ArgumentError, "Holidays must have both lower_window and upper_window, or neither"
+        end
+        if has_lower
+          if @holidays["lower_window"].max > 0
+            raise ArgumentError, "Holiday lower_window should be <= 0"
+          end
+          if @holidays["upper_window"].min < 0
+            raise ArgumentError, "Holiday upper_window should be >= 0"
+          end
+        end
+        @holidays["holiday"].uniq.each do |h|
+          validate_column_name(h, check_holidays: false)
+        end
+      end
+
+      if !["additive", "multiplicative"].include?(@seasonality_mode)
+        raise ArgumentError, "seasonality_mode must be \"additive\" or \"multiplicative\""
+      end
+    end
+
+    def validate_column_name(name, check_holidays: true, check_seasonalities: true, check_regressors: true)
+      if name.include?("_delim_")
+        raise ArgumentError, "Name cannot contain \"_delim_\""
+      end
+      reserved_names = [
+        "trend", "additive_terms", "daily", "weekly", "yearly",
+        "holidays", "zeros", "extra_regressors_additive", "yhat",
+        "extra_regressors_multiplicative", "multiplicative_terms",
+      ]
+      rn_l = reserved_names.map { |n| n + "_lower" }
+      rn_u = reserved_names.map { |n| n + "_upper" }
+      reserved_names.concat(rn_l)
+      reserved_names.concat(rn_u)
+      reserved_names.concat(["ds", "y", "cap", "floor", "y_scaled", "cap_scaled"])
+      if reserved_names.include?(name)
+        raise ArgumentError, "Name #{name.inspect} is reserved."
+      end
+      if check_holidays && @holidays && @holidays["holiday"].uniq.include?(name)
+        raise ArgumentError, "Name #{name.inspect} already used for a holiday."
+      end
+      if check_holidays && @country_holidays && get_holiday_names(@country_holidays).include?(name)
+        raise ArgumentError, "Name #{name.inspect} is a holiday name in #{@country_holidays.inspect}."
+      end
+      if check_seasonalities && @seasonalities[name]
+        raise ArgumentError, "Name #{name.inspect} already used for a seasonality."
+      end
+      if check_regressors and @extra_regressors[name]
+        raise ArgumentError, "Name #{name.inspect} already used for an added regressor."
+      end
+    end
+
+    def setup_dataframe(df, initialize_scales: false)
+      if df.vectors.include?("y")
+        df["y"] = df["y"].map(&:to_f)
+        raise ArgumentError "Found infinity in column y." unless df["y"].all?(&:finite?)
+      end
+      # TODO support integers
+
+      df["ds"] = to_datetime(df["ds"])
+
+      raise ArgumentError, "Found NaN in column ds." if df["ds"].any?(&:nil?)
+
+      @extra_regressors.each_key do |name|
+        if !df.vectors.include?(name)
+          raise ArgumentError, "Regressor #{name.inspect} missing from dataframe"
+        end
+        df[name] = df[name].map(&:to_f)
+        if df[name].any?(&:nil)
+          raise ArgumentError, "Found NaN in column #{name.inspect}"
+        end
+      end
+      @seasonalities.values.each do |props|
+        condition_name = props[:condition_name]
+        if condition_name
+          if !df.vectors.include?(condition_name)
+            raise ArgumentError, "Condition #{condition_name.inspect} missing from dataframe"
+          end
+          if df.where(!df[condition_name].in([true, false])).any?
+            raise ArgumentError, "Found non-boolean in column #{condition_name.inspect}"
+          end
+        end
+      end
+
+      if df.index.name == "ds"
+        df.index.name = nil
+      end
+      df = df.sort(["ds"])
+
+      initialize_scales(initialize_scales, df)
+
+      if @logistic_floor && !df.vectors.include?("floor")
+        raise ArgumentError, "Expected column \"floor\"."
+      else
+        df["floor"] = 0
+      end
+
+      if @growth == "logistic"
+        unless df.vectors.include?("cap")
+          raise ArgumentError, "Capacities must be supplied for logistic growth in column \"cap\""
+        end
+        if df.where(df["cap"] <= df["floor"]).size > 0
+          raise ArgumentError, "cap must be greater than floor (which defaults to 0)."
+        end
+        df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale
+      end
+
+      df["t"] = (df["ds"] - @start) / @t_scale.to_f
+      if df.vectors.include?("y")
+        df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale
+      end
+
+      @extra_regressors.each do |name, props|
+        df[name] = ((df[name] - props["mu"]) / props["std"])
+      end
+
+      df
+    end
+
+    def initialize_scales(initialize_scales, df)
+      return unless initialize_scales
+
+      floor = 0
+      @y_scale = (df["y"] - floor).abs.max
+      @y_scale = 1 if @y_scale == 0
+      @start = df["ds"].min
+      @t_scale = df["ds"].max - @start
+    end
+
+    def set_changepoints
+      hist_size = (@history.shape[0] * @changepoint_range).floor
+
+      if @n_changepoints + 1 > hist_size
+        @n_changepoints = hist_size - 1
+        logger.info "n_changepoints greater than number of observations. Using #{@n_changepoints}"
+      end
+
+      if @n_changepoints > 0
+        step = (hist_size - 1) / @n_changepoints.to_f
+        cp_indexes = (@n_changepoints + 1).times.map { |i| (i * step).round }
+        @changepoints = @history["ds"][*cp_indexes][1..-1]
+      else
+        @changepoints = []
+      end
+
+      if @changepoints.size > 0
+        @changepoints_t = Numo::NArray.asarray(((@changepoints - @start) / @t_scale.to_f).to_a).sort
+      else
+        @changepoints_t = Numo::NArray.asarray([0])
+      end
+    end
+
+    def fourier_series(dates, period, series_order)
+      start = Time.utc(1970).to_i
+      # uses to_datetime first so we get UTC
+      t = Numo::DFloat.asarray(dates.map { |v| v.to_i - start }) / (3600 * 24.0)
+
+      # no need for column_stack
+      series_order.times.flat_map do |i|
+        [Numo::DFloat::Math.method(:sin), Numo::DFloat::Math.method(:cos)].map do |fun|
+          fun.call(2.0 * (i + 1) * Math::PI * t / period)
+        end
+      end
+    end
+
+    def make_seasonality_features(dates, period, series_order, prefix)
+      features = fourier_series(dates, period, series_order)
+      Daru::DataFrame.new(features.map.with_index { |v, i| ["#{prefix}_delim_#{i + 1}", v] }.to_h)
+    end
+
+    def construct_holiday_dataframe(dates)
+      all_holidays = Daru::DataFrame.new
+      if @holidays
+        all_holidays = @holidays.dup
+      end
+      if @country_holidays
+        year_list = dates.map(&:year)
+        country_holidays_df = make_holidays_df(year_list, @country_holidays)
+        all_holidays = all_holidays.concat(country_holidays_df)
+      end
+      # Drop future holidays not previously seen in training data
+      if @train_holiday_names
+        # Remove holiday names didn't show up in fit
+        all_holidays = all_holidays.where(all_holidays["holiday"].in(@train_holiday_names))
+
+        # Add holiday names in fit but not in predict with ds as NA
+        holidays_to_add = Daru::DataFrame.new(
+          "holiday" => @train_holiday_names.where(!@train_holiday_names.in(all_holidays["holiday"]))
+        )
+        all_holidays = all_holidays.concat(holidays_to_add)
+      end
+
+      all_holidays
+    end
+
+    def make_holiday_features(dates, holidays)
+      expanded_holidays = Hash.new { |hash, key| hash[key] = Numo::DFloat.zeros(dates.size) }
+      prior_scales = {}
+      # Makes an index so we can perform `get_loc` below.
+      # Strip to just dates.
+      row_index = dates.map(&:to_date)
+
+      holidays.each_row do |row|
+        dt = row["ds"]
+        lw = nil
+        uw = nil
+        begin
+          lw = row["lower_window"].to_i
+          uw = row["upper_window"].to_i
+        rescue IndexError
+          lw = 0
+          uw = 0
+        end
+        ps = @holidays_prior_scale
+        if prior_scales[row["holiday"]] && prior_scales[row["holiday"]] != ps
+          raise ArgumentError, "Holiday #{row["holiday"].inspect} does not have consistent prior scale specification."
+        end
+        raise ArgumentError, "Prior scale must be > 0" if ps <= 0
+        prior_scales[row["holiday"]] = ps
+
+        lw.upto(uw).each do |offset|
+          occurrence = dt ? dt + offset : nil
+          loc = occurrence ? row_index.index(occurrence) : nil
+          key = "#{row["holiday"]}_delim_#{offset >= 0 ? "+" : "-"}#{offset.abs}"
+          if loc
+            expanded_holidays[key][loc] = 1.0
+          else
+            expanded_holidays[key]  # Access key to generate value
+          end
+        end
+      end
+      holiday_features = Daru::DataFrame.new(expanded_holidays)
+      # # Make sure column order is consistent
+      holiday_features = holiday_features[*holiday_features.vectors.sort]
+      prior_scale_list = holiday_features.vectors.map { |h| prior_scales[h.split("_delim_")[0]] }
+      holiday_names = prior_scales.keys
+      # Store holiday names used in fit
+      if !@train_holiday_names
+        @train_holiday_names = Daru::Vector.new(holiday_names)
+      end
+      [holiday_features, prior_scale_list, holiday_names]
+    end
+
+    def add_regressor(name, prior_scale: nil, standardize: "auto", mode: nil)
+      raise Error, "Regressors must be added prior to model fitting." if @history
+      validate_column_name(name, check_regressors: false)
+      prior_scale ||= @holidays_prior_scale.to_f
+      mode ||= @seasonality_mode
+      raise ArgumentError, "Prior scale must be > 0" if prior_scale <= 0
+      if !["additive", "multiplicative"].include?(mode)
+        raise ArgumentError, "mode must be \"additive\" or \"multiplicative\""
+      end
+      @extra_regressors[name] = {
+        prior_scale: prior_scale,
+        standardize: standardize,
+        mu: 0.0,
+        std: 1.0,
+        mode: mode
+      }
+      self
+    end
+
+    def add_seasonality(name:, period:, fourier_order:, prior_scale: nil, mode: nil, condition_name: nil)
+      raise Error, "Seasonality must be added prior to model fitting." if @history
+
+      if !["daily", "weekly", "yearly"].include?(name)
+        # Allow overwriting built-in seasonalities
+        validate_column_name(name, check_seasonalities: false)
+      end
+      if prior_scale.nil?
+        ps = @seasonality_prior_scale
+      else
+        ps = prior_scale.to_f
+      end
+      raise ArgumentError, "Prior scale must be > 0" if ps <= 0
+      raise ArgumentError, "Fourier Order must be > 0" if fourier_order <= 0
+      mode ||= @seasonality_mode
+      if !["additive", "multiplicative"].include?(mode)
+        raise ArgumentError, "mode must be \"additive\" or \"multiplicative\""
+      end
+      validate_column_name(condition_name) if condition_name
+      @seasonalities[name] = {
+        period: period,
+        fourier_order: fourier_order,
+        prior_scale: ps,
+        mode: mode,
+        condition_name: condition_name
+      }
+      self
+    end
+
+    def add_country_holidays(country_name)
+      raise Error, "Country holidays must be added prior to model fitting." if @history
+      # Validate names.
+      get_holiday_names(country_name).each do |name|
+        # Allow merging with existing holidays
+        validate_column_name(name, check_holidays: false)
+      end
+      # Set the holidays.
+      if @country_holidays
+        logger.warn "Changing country holidays from #{@country_holidays.inspect} to #{country_name.inspect}."
+      end
+      @country_holidays = country_name
+      self
+    end
+
+    def make_all_seasonality_features(df)
+      seasonal_features = []
+      prior_scales = []
+      modes = {"additive" => [], "multiplicative" => []}
+
+      # Seasonality features
+      @seasonalities.each do |name, props|
+        features = make_seasonality_features(
+          df["ds"],
+          props[:period],
+          props[:fourier_order],
+          name
+        )
+        if props[:condition_name]
+          features[!df.where(props[:condition_name])] = 0
+        end
+        seasonal_features << features
+        prior_scales.concat([props[:prior_scale]] * features.shape[1])
+        modes[props[:mode]] << name
+      end
+
+      # Holiday features
+      holidays = construct_holiday_dataframe(df["ds"])
+      if holidays.size > 0
+        features, holiday_priors, holiday_names = make_holiday_features(df["ds"], holidays)
+        seasonal_features << features
+        prior_scales.concat(holiday_priors)
+        modes[@seasonality_mode].concat(holiday_names)
+      end
+
+      # # Additional regressors
+      @extra_regressors.each do |name, props|
+        seasonal_features << df[name].to_df
+        prior_scales << props[:prior_scale]
+        modes[props[:mode]] << name
+      end
+
+      # # Dummy to prevent empty X
+      if seasonal_features.size == 0
+        seasonal_features << Daru::DataFrame.new("zeros" => [0] * df.shape[0])
+        prior_scales << 1.0
+      end
+
+      seasonal_features = df_concat_axis_one(seasonal_features)
+
+      component_cols, modes = regressor_column_matrix(seasonal_features, modes)
+
+      [seasonal_features, prior_scales, component_cols, modes]
+    end
+
+    def regressor_column_matrix(seasonal_features, modes)
+      components = Daru::DataFrame.new(
+        "col" => seasonal_features.shape[1].times.to_a,
+        "component" => seasonal_features.vectors.map { |x| x.split("_delim_")[0] }
+      )
+
+      # # Add total for holidays
+      if @train_holiday_names
+        components = add_group_component(components, "holidays", @train_holiday_names.uniq)
+      end
+      # # Add totals additive and multiplicative components, and regressors
+      ["additive", "multiplicative"].each do |mode|
+        components = add_group_component(components, mode + "_terms", modes[mode])
+        regressors_by_mode = @extra_regressors.select { |r, props| props[:mode] == mode }
+          .map { |r, props| r }
+        components = add_group_component(components, "extra_regressors_" + mode, regressors_by_mode)
+
+        # Add combination components to modes
+        modes[mode] << mode + "_terms"
+        modes[mode] << "extra_regressors_" + mode
+      end
+      # # After all of the additive/multiplicative groups have been added,
+      modes[@seasonality_mode] << "holidays"
+      # # Convert to a binary matrix
+      component_cols = Daru::DataFrame.crosstab_by_assignation(
+        components["col"], components["component"], [1] * components.size
+      )
+      component_cols.each_vector do |v|
+        v.map! { |vi| vi.nil? ? 0 : vi }
+      end
+      component_cols.rename_vectors(:_id => "col")
+
+      # Add columns for additive and multiplicative terms, if missing
+      ["additive_terms", "multiplicative_terms"].each do |name|
+        component_cols[name] = 0 unless component_cols.vectors.include?(name)
+      end
+
+      # TODO validation
+
+      [component_cols, modes]
+    end
+
+    def add_group_component(components, name, group)
+      new_comp = components.where(components["component"].in(group)).dup
+      group_cols = new_comp["col"].uniq
+      if group_cols.size > 0
+        new_comp = Daru::DataFrame.new("col" => group_cols, "component" => [name] * group_cols.size)
+        components = components.concat(new_comp)
+      end
+      components
+    end
+
+    def parse_seasonality_args(name, arg, auto_disable, default_order)
+      case arg
+      when "auto"
+        fourier_order = 0
+        if @seasonalities.include?(name)
+          logger.info "Found custom seasonality named #{name.inspect}, disabling built-in #{name.inspect}seasonality."
+        elsif auto_disable
+          logger.info "Disabling #{name} seasonality. Run prophet with #{name}_seasonality: true to override this."
+        else
+          fourier_order = default_order
+        end
+      when true
+        fourier_order = default_order
+      when false
+        fourier_order = 0
+      else
+        fourier_order = arg.to_i
+      end
+      fourier_order
+    end
+
+    def set_auto_seasonalities
+      first = @history["ds"].min
+      last = @history["ds"].max
+      dt = @history["ds"].diff
+      min_dt = dt.min
+
+      days = 86400
+
+      # Yearly seasonality
+      yearly_disable = last - first < 370 * days
+      fourier_order = parse_seasonality_args("yearly", @yearly_seasonality, yearly_disable, 10)
+      if fourier_order > 0
+        @seasonalities["yearly"] = {
+          period: 365.25,
+          fourier_order: fourier_order,
+          prior_scale: @seasonality_prior_scale,
+          mode: @seasonality_mode,
+          condition_name: nil
+        }
+      end
+
+      # Weekly seasonality
+      weekly_disable = last - first < 14 * days || min_dt >= 7 * days
+      fourier_order = parse_seasonality_args("weekly", @weekly_seasonality, weekly_disable, 3)
+      if fourier_order > 0
+        @seasonalities["weekly"] = {
+          period: 7,
+          fourier_order: fourier_order,
+          prior_scale: @seasonality_prior_scale,
+          mode: @seasonality_mode,
+          condition_name: nil
+        }
+      end
+
+      # Daily seasonality
+      daily_disable = last - first < 2 * days || min_dt >= 1 * days
+      fourier_order = parse_seasonality_args("daily", @daily_seasonality, daily_disable, 4)
+      if fourier_order > 0
+        @seasonalities["daily"] = {
+          period: 1,
+          fourier_order: fourier_order,
+          prior_scale: @seasonality_prior_scale,
+          mode: @seasonality_mode,
+          condition_name: nil
+        }
+      end
+    end
+
+    def linear_growth_init(df)
+      i0 = df["ds"].index.min
+      i1 = df["ds"].index.max
+      t = df["t"][i1] - df["t"][i0]
+      k = (df["y_scaled"][i1] - df["y_scaled"][i0]) / t
+      m = df["y_scaled"][i0] - k * df["t"][i0]
+      [k, m]
+    end
+
+    def logistic_growth_init(df)
+      i0 = df["ds"].index.min
+      i1 = df["ds"].index.max
+      t = df["t"][i1] - df["t"][i0]
+
+      # Force valid values, in case y > cap or y < 0
+      c0 = df["cap_scaled"][i0]
+      c1 = df["cap_scaled"][i1]
+      y0 = [0.01 * c0, [0.99 * c0, df["y_scaled"][i0]].min].max
+      y1 = [0.01 * c1, [0.99 * c1, df["y_scaled"][i1]].min].max
+
+      r0 = c0 / y0
+      r1 = c1 / y1
+
+      if (r0 - r1).abs <= 0.01
+        r0 = 1.05 * r0
+      end
+
+      l0 = Math.log(r0 - 1)
+      l1 = Math.log(r1 - 1)
+
+      # Initialize the offset
+      m = l0 * t / (l0 - l1)
+      # And the rate
+      k = (l0 - l1) / t
+      [k, m]
+    end
+
+    def fit(df, **kwargs)
+      raise Error, "Prophet object can only be fit once" if @history
+
+      history = df.where(!df["y"].in([nil, Float::NAN]))
+      raise Error, "Data has less than 2 non-nil rows" if history.shape[0] < 2
+
+      @history_dates = to_datetime(df["ds"]).sort
+      history = setup_dataframe(history, initialize_scales: true)
+      @history = history
+      set_auto_seasonalities
+      seasonal_features, prior_scales, component_cols, modes = make_all_seasonality_features(history)
+      @train_component_cols = component_cols
+      @component_modes = modes
+      @fit_kwargs = kwargs.dup # TODO deep dup?
+
+      set_changepoints
+
+      dat = {
+        "T" => history.shape[0],
+        "K" => seasonal_features.shape[1],
+        "S" => @changepoints_t.size,
+        "y" => history["y_scaled"],
+        "t" => history["t"],
+        "t_change" => @changepoints_t,
+        "X" => seasonal_features,
+        "sigmas" => prior_scales,
+        "tau" => @changepoint_prior_scale,
+        "trend_indicator" => @growth == "logistic" ? 1 : 0,
+        "s_a" => component_cols["additive_terms"],
+        "s_m" => component_cols["multiplicative_terms"]
+      }
+
+      if @growth == "linear"
+        dat["cap"] = Numo::DFloat.zeros(@history.shape[0])
+        kinit = linear_growth_init(history)
+      else
+        dat["cap"] = history["cap_scaled"]
+        kinit = logistic_growth_init(history)
+      end
+
+      stan_init = {
+        "k" => kinit[0],
+        "m" => kinit[1],
+        "delta" => Numo::DFloat.zeros(@changepoints_t.size),
+        "beta" => Numo::DFloat.zeros(seasonal_features.shape[1]),
+        "sigma_obs" => 1
+      }
+
+      if history["y"].min == history["y"].max && @growth == "linear"
+        # Nothing to fit.
+        @params = stan_init
+        @params["sigma_obs"] = 1e-9
+        @params.each do |par|
+          @params[par] = Numo::NArray.asarray(@params[par])
+        end
+      elsif @mcmc_samples > 0
+        @params = @stan_backend.sampling(stan_init, dat, @mcmc_samples, **kwargs)
+      else
+        @params = @stan_backend.fit(stan_init, dat, **kwargs)
+      end
+
+      # If no changepoints were requested, replace delta with 0s
+      if @changepoints.size == 0
+        # Fold delta into the base rate k
+        @params["k"] = @params["k"] + @params["delta"].reshape(-1)
+        @params["delta"] = Numo::DFloat.zeros(@params["delta"].shape).reshape(-1, 1)
+      end
+
+      self
+    end
+
+    def predict(df = nil)
+      raise Error, "Model has not been fit." unless @history
+
+      if df.nil?
+        df = @history.dup
+      else
+        raise ArgumentError, "Dataframe has no rows." if df.shape[0] == 0
+        df = setup_dataframe(df.dup)
+      end
+
+      df["trend"] = predict_trend(df)
+      seasonal_components = predict_seasonal_components(df)
+      if @uncertainty_samples
+        intervals = predict_uncertainty(df)
+      else
+        intervals = nil
+      end
+
+      # Drop columns except ds, cap, floor, and trend
+      cols = ["ds", "trend"]
+      cols << "cap" if df.vectors.include?("cap")
+      cols << "floor" if @logistic_floor
+      # Add in forecast components
+      df2 = df_concat_axis_one([df[*cols], intervals, seasonal_components])
+      df2["yhat"] = df2["trend"] * (df2["multiplicative_terms"] + 1) + df2["additive_terms"]
+      df2
+    end
+
+    def piecewise_linear(t, deltas, k, m, changepoint_ts)
+      # Intercept changes
+      gammas = -changepoint_ts * deltas
+      # Get cumulative slope and intercept at each t
+      k_t = t.new_ones * k
+      m_t = t.new_ones * m
+      changepoint_ts.each_with_index do |t_s, s|
+        indx = t >= t_s
+        k_t[indx] += deltas[s]
+        m_t[indx] += gammas[s]
+      end
+      k_t * t + m_t
+    end
+
+    def piecewise_logistic(t, cap, deltas, k, m, changepoint_ts)
+      k_1d = Numo::NArray.asarray(k)
+      k_1d = k_1d.reshape(1) if k_1d.ndim < 1
+      k_cum = k_1d.concatenate(deltas.cumsum + k)
+      gammas = Numo::DFloat.zeros(changepoint_ts.size)
+      changepoint_ts.each_with_index do |t_s, i|
+        gammas[i] = (t_s - m - gammas.sum) * (1 - k_cum[i] / k_cum[i + 1])
+      end
+      # Get cumulative rate and offset at each t
+      k_t = t.new_ones * k
+      m_t = t.new_ones * m
+      changepoint_ts.each_with_index do |t_s, s|
+        indx = t >= t_s
+        k_t[indx] += deltas[s]
+        m_t[indx] += gammas[s]
+      end
+      # need df_values to prevent memory from blowing up
+      df_values(cap) / (1 + Numo::NMath.exp(-k_t * (t - m_t)))
+    end
+
+    def predict_trend(df)
+      k = @params["k"].mean(nan: true)
+      m = @params["m"].mean(nan: true)
+      deltas = @params["delta"].mean(axis: 0, nan: true)
+
+      t = Numo::NArray.asarray(df["t"].to_a)
+      if @growth == "linear"
+        trend = piecewise_linear(t, deltas, k, m, @changepoints_t)
+      else
+        cap = df["cap_scaled"]
+        trend = piecewise_logistic(t, cap, deltas, k, m, @changepoints_t)
+      end
+
+      trend * @y_scale + Numo::NArray.asarray(df["floor"].to_a)
+    end
+
+    def predict_seasonal_components(df)
+      seasonal_features, _, component_cols, _ = make_all_seasonality_features(df)
+      if @uncertainty_samples
+        lower_p = 100 * (1.0 - @interval_width) / 2
+        upper_p = 100 * (1.0 + @interval_width) / 2
+      end
+
+      x = df_values(seasonal_features)
+      data = {}
+      component_cols.vectors.each do |component|
+        beta_c = @params["beta"] * Numo::NArray.asarray(component_cols[component].to_a)
+
+        comp = x.dot(beta_c.transpose)
+        if @component_modes["additive"].include?(component)
+          comp *= @y_scale
+        end
+        data[component] = comp.mean(axis: 1, nan: true)
+        if @uncertainty_samples
+          data[component + "_lower"] = percentile(comp, lower_p, axis: 1)
+          data[component + "_upper"] = percentile(comp, upper_p, axis: 1)
+        end
+      end
+      Daru::DataFrame.new(data)
+    end
+
+    def sample_posterior_predictive(df)
+      n_iterations = @params["k"].shape[0]
+      samp_per_iter = [1, (@uncertainty_samples / n_iterations.to_f).ceil].max
+
+      # Generate seasonality features once so we can re-use them.
+      seasonal_features, _, component_cols, _ = make_all_seasonality_features(df)
+
+      # convert to Numo for performance
+      seasonal_features = df_values(seasonal_features)
+      additive_terms = df_values(component_cols["additive_terms"])
+      multiplicative_terms = df_values(component_cols["multiplicative_terms"])
+
+      sim_values = {"yhat" => [], "trend" => []}
+      n_iterations.times do |i|
+        samp_per_iter.times do
+          sim = sample_model(
+            df,
+            seasonal_features,
+            i,
+            additive_terms,
+            multiplicative_terms
+          )
+          sim_values.each_key do |key|
+            sim_values[key] << sim[key]
+          end
+        end
+      end
+      sim_values.each do |k, v|
+        sim_values[k] = Numo::NArray.column_stack(v)
+      end
+      sim_values
+    end
+
+    def predictive_samples(df)
+      df = setup_dataframe(df.dup)
+      sim_values = sample_posterior_predictive(df)
+      sim_values
+    end
+
+    def predict_uncertainty(df)
+      sim_values = sample_posterior_predictive(df)
+
+      lower_p = 100 * (1.0 - @interval_width) / 2
+      upper_p = 100 * (1.0 + @interval_width) / 2
+
+      series = {}
+      ["yhat", "trend"].each do |key|
+        series["#{key}_lower"] = percentile(sim_values[key], lower_p, axis: 1)
+        series["#{key}_upper"] = percentile(sim_values[key], upper_p, axis: 1)
+      end
+
+      Daru::DataFrame.new(series)
+    end
+
+    def sample_model(df, seasonal_features, iteration, s_a, s_m)
+      trend = sample_predictive_trend(df, iteration)
+
+      beta = @params["beta"][iteration, true]
+      xb_a = seasonal_features.dot(beta * s_a) * @y_scale
+      xb_m = seasonal_features.dot(beta * s_m)
+
+      sigma = @params["sigma_obs"][iteration]
+      noise = Numo::DFloat.new(*df.shape[0]).rand_norm(0, sigma) * @y_scale
+
+      # skip data frame for performance
+      {
+        "yhat" => trend * (1 + xb_m) + xb_a + noise,
+        "trend" => trend
+      }
+    end
+
+    def sample_predictive_trend(df, iteration)
+      k = @params["k"][iteration, true]
+      m = @params["m"][iteration, true]
+      deltas = @params["delta"][iteration, true]
+
+      t = Numo::NArray.asarray(df["t"].to_a)
+      upper_t = t.max
+
+      # New changepoints from a Poisson process with rate S on [1, T]
+      if upper_t > 1
+        s = @changepoints_t.size
+        n_changes = poisson(s * (upper_t - 1))
+      else
+        n_changes = 0
+      end
+      if n_changes > 0
+        changepoint_ts_new = 1 + Numo::DFloat.new(n_changes).rand * (upper_t - 1)
+        changepoint_ts_new.sort
+      else
+        changepoint_ts_new = []
+      end
+
+      # Get the empirical scale of the deltas, plus epsilon to avoid NaNs.
+      lambda_ = deltas.abs.mean + 1e-8
+
+      # Sample deltas
+      deltas_new = laplace(0, lambda_, n_changes)
+
+      # Prepend the times and deltas from the history
+      changepoint_ts = @changepoints_t.concatenate(changepoint_ts_new)
+      deltas = deltas.concatenate(deltas_new)
+
+      if @growth == "linear"
+        trend = piecewise_linear(t, deltas, k, m, changepoint_ts)
+      else
+        cap = df["cap_scaled"]
+        trend = piecewise_logistic(t, cap, deltas, k, m, changepoint_ts)
+      end
+
+      trend * @y_scale + Numo::NArray.asarray(df["floor"].to_a)
+    end
+
+    def percentile(a, percentile, axis:)
+      raise Error, "Axis must be 1" if axis != 1
+
+      sorted = a.sort(axis: axis)
+      x = percentile / 100.0 * (sorted.shape[axis] - 1)
+      r = x % 1
+      i = x.floor
+      # this should use axis, but we only need axis: 1
+      if i == sorted.shape[axis] - 1
+        sorted[true, -1]
+      else
+        sorted[true, i] + r * (sorted[true, i + 1] - sorted[true, i])
+      end
+    end
+
+    def make_future_dataframe(periods:, freq: "D", include_history: true)
+      raise Error, "Model has not been fit" unless @history_dates
+      last_date = @history_dates.max
+      case freq
+      when "D"
+        # days have constant length with UTC (no DST or leap seconds)
+        dates = (periods + 1).times.map { |i| last_date + i * 86400 }
+      when "H"
+        dates = (periods + 1).times.map { |i| last_date + i * 3600 }
+      when "MS"
+        dates = [last_date]
+        periods.times do
+          dates << dates.last.to_datetime.next_month.to_time.utc
+        end
+      else
+        raise ArgumentError, "Unknown freq: #{freq}"
+      end
+      dates.select! { |d| d > last_date }
+      dates = dates.last(periods)
+      dates = @history_dates + dates if include_history
+      Daru::DataFrame.new("ds" => dates)
+    end
+
+    private
+
+    # Time is prefer over DateTime Ruby
+    # use UTC to be consistent with Python
+    # and so days have equal length (no DST)
+    def to_datetime(vec)
+      return if vec.nil?
+      vec.map do |v|
+        case v
+        when Time
+          v.utc
+        when Date
+          v.to_datetime.to_time.utc
+        else
+          DateTime.parse(v.to_s).to_time.utc
+        end
+      end
+    end
+
+    # okay to do in-place
+    def df_concat_axis_one(dfs)
+      dfs[1..-1].each do |df|
+        df.each_vector_with_index do |v, k|
+          dfs[0][k] = v
+        end
+      end
+      dfs[0]
+    end
+
+    def df_values(df)
+      if df.is_a?(Daru::Vector)
+        Numo::NArray.asarray(df.to_a)
+      else
+        # TODO make more performant
+        Numo::NArray.asarray(df.to_matrix.to_a)
+      end
+    end
+
+    # https://en.wikipedia.org/wiki/Poisson_distribution#Generating_Poisson-distributed_random_variables
+    def poisson(lam)
+      l = Math.exp(-lam)
+      k = 0
+      p = 1
+      while p > l
+        k += 1
+        p *= rand
+      end
+      k - 1
+    end
+
+    # https://en.wikipedia.org/wiki/Laplace_distribution#Generating_values_from_the_Laplace_distribution
+    def laplace(loc, scale, size)
+      u = Numo::DFloat.new(size).rand - 0.5
+      loc - scale * u.sign * Numo::NMath.log(1 - 2 * u.abs)
+    end
+  end
+end
