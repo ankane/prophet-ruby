@@ -10,6 +10,8 @@ Supports:
 
 And gracefully handles missing data
 
+[![Build Status](https://travis-ci.org/ankane/prophet.svg?branch=master)](https://travis-ci.org/ankane/prophet)
+
 ## Installation
 
 Add this line to your application’s Gemfile:
