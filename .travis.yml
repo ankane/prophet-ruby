@@ -3,9 +3,7 @@ language: ruby
 rvm: 2.7
 cache:
   bundler: true
-before_script:
-  - pip3 install matplotlib
-  - bundle exec ruby ext/prophet/extconf.rb
+before_script: bundle exec ruby ext/prophet/extconf.rb
 script: bundle exec rake test
 notifications:
   email:
