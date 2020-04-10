@@ -156,7 +156,7 @@ module Prophet
           raise ArgumentError, "Regressor #{name.inspect} missing from dataframe"
         end
         df[name] = df[name].map(&:to_f)
-        if df[name].any?(&:nil)
+        if df[name].any?(&:nil?)
           raise ArgumentError, "Found NaN in column #{name.inspect}"
         end
       end
@@ -201,7 +201,7 @@ module Prophet
       end
 
       @extra_regressors.each do |name, props|
-        df[name] = ((df[name] - props["mu"]) / props["std"])
+        df[name] = ((df[name] - props[:mu]) / props[:std])
       end
 
       df

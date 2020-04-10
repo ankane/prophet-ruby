@@ -146,7 +146,7 @@ module Prophet
 
     def seasonality_plot_df(ds)
       df_dict = {"ds" => ds, "cap" => [1.0] * ds.size, "floor" => [0.0] * ds.size}
-      @extra_regressors.each do |name|
+      @extra_regressors.each_key do |name|
         df_dict[name] = [0.0] * ds.size
       end
       # Activate all conditional seasonality columns

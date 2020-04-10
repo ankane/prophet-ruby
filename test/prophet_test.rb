@@ -133,6 +133,29 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "custom_seasonality")
   end
 
+  def test_regressors
+    df = load_example
+
+    nfl_sunday = lambda do |ds|
+      date = ds.respond_to?(:to_date) ? ds.to_date : Date.parse(ds)
+      # weekday == 6 in Python is Sunday
+      date.wday == 0 && (date.month > 8 || date.month < 2) ? 1 : 0
+    end
+
+    df["nfl_sunday"] = df["ds"].map(&nfl_sunday)
+
+    m = Prophet.new
+    m.add_regressor("nfl_sunday")
+    m.fit(df)
+
+    future = m.make_future_dataframe(periods: 365)
+    future["nfl_sunday"] = future["ds"].map(&nfl_sunday)
+
+    forecast = m.predict(future)
+
+    plot(m, forecast, "regressors")
+  end
+
   def test_multiplicative_seasonality
     df = Daru::DataFrame.from_csv("examples/example_air_passengers.csv")
     m = Prophet.new(seasonality_mode: "multiplicative")
