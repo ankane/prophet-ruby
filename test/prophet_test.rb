@@ -67,6 +67,17 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "logistic")
   end
 
+  def test_changepoints
+    df = load_example
+
+    m = Prophet.new(changepoints: ["2014-01-01"])
+    m.fit(df)
+    future = m.make_future_dataframe(periods: 365)
+    forecast = m.predict(future)
+
+    plot(m, forecast, "changepoints")
+  end
+
   def test_holidays
     df = load_example
 

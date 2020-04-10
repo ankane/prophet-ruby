@@ -218,23 +218,33 @@ module Prophet
     end
 
     def set_changepoints
-      hist_size = (@history.shape[0] * @changepoint_range).floor
-
-      if @n_changepoints + 1 > hist_size
-        @n_changepoints = hist_size - 1
-        logger.info "n_changepoints greater than number of observations. Using #{@n_changepoints}"
-      end
-
-      if @n_changepoints > 0
-        step = (hist_size - 1) / @n_changepoints.to_f
-        cp_indexes = (@n_changepoints + 1).times.map { |i| (i * step).round }
-        @changepoints = @history["ds"][*cp_indexes][1..-1]
+      if @changepoints
+        if @changepoints.size > 0
+          too_low = @changepoints.min < @history["ds"].min
+          too_high = @changepoints.max > @history["ds"].max
+          if too_low || too_high
+            raise ArgumentError, "Changepoints must fall within training data."
+          end
+        end
       else
-        @changepoints = []
+        hist_size = (@history.shape[0] * @changepoint_range).floor
+
+        if @n_changepoints + 1 > hist_size
+          @n_changepoints = hist_size - 1
+          logger.info "n_changepoints greater than number of observations. Using #{@n_changepoints}"
+        end
+
+        if @n_changepoints > 0
+          step = (hist_size - 1) / @n_changepoints.to_f
+          cp_indexes = (@n_changepoints + 1).times.map { |i| (i * step).round }
+          @changepoints = ensure_arr(@history["ds"][*cp_indexes].to_a.last(cp_indexes.size - 1))
+        else
+          @changepoints = []
+        end
       end
 
       if @changepoints.size > 0
-        @changepoints_t = Numo::NArray.asarray(((@changepoints - @start) / @t_scale.to_f).to_a).sort
+        @changepoints_t = (Numo::DFloat.cast(@changepoints.map(&:to_i).sort) - @start.to_i) / @t_scale.to_f
       else
         @changepoints_t = Numo::NArray.asarray([0])
       end
@@ -986,6 +996,11 @@ module Prophet
     def laplace(loc, scale, size)
       u = Numo::DFloat.new(size).rand - 0.5
       loc - scale * u.sign * Numo::NMath.log(1 - 2 * u.abs)
+    end
+
+    def ensure_arr(value)
+      value = [value] unless value.is_a?(Array)
+      value
     end
   end
 end

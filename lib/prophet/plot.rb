@@ -101,7 +101,7 @@ module Prophet
       end
       signif_changepoints =
         if @changepoints.size > 0
-          @changepoints[*(@params["delta"].mean(axis: 0, nan: true).abs >= threshold).where]
+          ensure_arr(@changepoints[*(@params["delta"].mean(axis: 0, nan: true).abs >= threshold).where])
         else
           []
         end
