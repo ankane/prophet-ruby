@@ -107,7 +107,7 @@ m.plot_components(forecast).savefig("components.png")
 Forecast logistic growth instead of linear
 
 ```ruby
-df = Daru::DataFrame.from_csv("examples/example_wp_log_R.csv")
+df = Daru::DataFrame.from_csv("example_wp_log_R.csv")
 df["cap"] = 8.5
 m = Prophet.new(growth: "logistic")
 m.fit(df)
@@ -159,7 +159,6 @@ Specify custom seasonalities
 m = Prophet.new(weekly_seasonality: false)
 m.add_seasonality(name: "monthly", period: 30.5, fourier_order: 5)
 forecast = m.fit(df).predict(future)
-m.plot_components(forecast).savefig("components.png")
 ```
 
 ## Multiplicative Seasonality
@@ -184,8 +183,7 @@ Sub-daily data
 df = Daru::DataFrame.from_csv("example_yosemite_temps.csv")
 m = Prophet.new(changepoint_prior_scale: 0.01).fit(df)
 future = m.make_future_dataframe(periods: 300, freq: "H")
-fcst = m.predict(future)
-m.plot(fcst).savefig("forecast.png")
+forecast = m.predict(future)
 ```
 
 ## Resources
