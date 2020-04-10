@@ -116,6 +116,16 @@ future["cap"] = 8.5
 forecast = m.predict(future)
 ```
 
+## Trend Changepoints
+
+[Explanation](https://facebook.github.io/prophet/docs/trend_changepoints.html)
+
+Specify the location of changepoints
+
+```ruby
+m = Prophet.new(changepoints: ["2014-01-01"])
+```
+
 ## Holidays and Special Events
 
 [Explanation](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html)
