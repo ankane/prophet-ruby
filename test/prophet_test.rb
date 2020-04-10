@@ -43,26 +43,26 @@ class ProphetTest < Minitest::Test
   end
 
   def test_logistic
-    df = load_example
-    df["cap"] = 1000
+    df = Daru::DataFrame.from_csv("examples/example_wp_log_R.csv")
+    df["cap"] = 8.5
 
     m = Prophet.new(growth: "logistic")
     m.fit(df, seed: 123)
 
     if mac?
-      assert_in_delta 7750.6, m.params["lp__"][0]
-      assert_in_delta 0.0514968, m.params["k"][0]
-      assert_in_delta 94.2344, m.params["m"][0]
+      assert_in_delta 9019.8, m.params["lp__"][0], 1
+      assert_in_delta 2.07112, m.params["k"][0], 0.1
+      assert_in_delta -0.361439, m.params["m"][0], 0.01
     end
 
     future = m.make_future_dataframe(periods: 365)
-    future["cap"] = 1000
+    future["cap"] = 8.5
 
     forecast = m.predict(future)
-    assert_equal ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
-    assert_elements_in_delta [8.243210, 8.261121], forecast["yhat"].tail(2).to_a
-    assert_elements_in_delta [7.503160, 7.481241], forecast["yhat_lower"].tail(2).to_a
-    assert_elements_in_delta [8.992239, 9.017918], forecast["yhat_upper"].tail(2).to_a
+    assert_equal ["2016-12-29 00:00:00 UTC", "2016-12-30 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
+    assert_elements_in_delta [7.796425, 7.714560], forecast["yhat"].tail(2).to_a
+    assert_elements_in_delta [7.503935, 7.398324], forecast["yhat_lower"].tail(2).to_a
+    assert_elements_in_delta [8.099635, 7.997564], forecast["yhat_upper"].tail(2).to_a
 
     plot(m, forecast, "logistic")
   end
