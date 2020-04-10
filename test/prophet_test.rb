@@ -138,7 +138,6 @@ class ProphetTest < Minitest::Test
 
     nfl_sunday = lambda do |ds|
       date = ds.respond_to?(:to_date) ? ds.to_date : Date.parse(ds)
-      # weekday == 6 in Python is Sunday
       date.wday == 0 && (date.month > 8 || date.month < 2) ? 1 : 0
     end
 

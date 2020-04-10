@@ -184,6 +184,25 @@ m.add_seasonality(name: "monthly", period: 30.5, fourier_order: 5)
 forecast = m.fit(df).predict(future)
 ```
 
+Specify additional regressors
+
+```ruby
+nfl_sunday = lambda do |ds|
+  date = ds.respond_to?(:to_date) ? ds.to_date : Date.parse(ds)
+  date.wday == 0 && (date.month > 8 || date.month < 2) ? 1 : 0
+end
+
+df["nfl_sunday"] = df["ds"].map(&nfl_sunday)
+
+m = Prophet.new
+m.add_regressor("nfl_sunday")
+m.fit(df)
+
+future["nfl_sunday"] = future["ds"].map(&nfl_sunday)
+
+forecast = m.predict(future)
+```
+
 ## Multiplicative Seasonality
 
 [Explanation](https://facebook.github.io/prophet/docs/multiplicative_seasonality.html)
