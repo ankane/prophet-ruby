@@ -905,6 +905,8 @@ module Prophet
     def make_future_dataframe(periods:, freq: "D", include_history: true)
       raise Error, "Model has not been fit" unless @history_dates
       last_date = @history_dates.max
+      # TODO add more freq
+      # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases
       case freq
       when "H"
         hour = 3600
