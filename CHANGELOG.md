@@ -1,4 +1,4 @@
-## 0.1.1 (unreleased)
+## 0.1.1 (2020-04-10)
 
 - Added `add_changepoints_to_plot`
 - Fixed error with `changepoints` option
