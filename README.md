@@ -100,6 +100,22 @@ m.plot_components(forecast).savefig("components.png")
 
 ![Components](https://blazer.dokkuapp.com/assets/prophet/components-b9e31bfcf77e57bbd503c0bcff5e5544e66085b90709b06dd96c5f622a87d84f.png)
 
+## Saturating Forecasts
+
+[Explanation](https://facebook.github.io/prophet/docs/saturating_forecasts.html)
+
+Forecast logistic growth instead of linear
+
+```ruby
+df = Daru::DataFrame.from_csv("examples/example_wp_log_R.csv")
+df["cap"] = 8.5
+m = Prophet.new(growth: "logistic")
+m.fit(df)
+future = m.make_future_dataframe(periods: 365)
+future["cap"] = 8.5
+forecast = m.predict(future)
+```
+
 ## Holidays and Special Events
 
 [Explanation](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html)
