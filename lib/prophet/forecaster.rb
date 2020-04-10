@@ -906,11 +906,16 @@ module Prophet
       raise Error, "Model has not been fit" unless @history_dates
       last_date = @history_dates.max
       case freq
+      when "H"
+        hour = 3600
+        dates = (periods + 1).times.map { |i| last_date + i * hour }
       when "D"
         # days have constant length with UTC (no DST or leap seconds)
-        dates = (periods + 1).times.map { |i| last_date + i * 86400 }
-      when "H"
-        dates = (periods + 1).times.map { |i| last_date + i * 3600 }
+        day = 24 * 3600
+        dates = (periods + 1).times.map { |i| last_date + i * day }
+      when "W"
+        week = 7 * 24 * 3600
+        dates = (periods + 1).times.map { |i| last_date + i * week }
       when "MS"
         dates = [last_date]
         periods.times do
