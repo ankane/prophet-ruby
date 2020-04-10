@@ -2,6 +2,8 @@ require_relative "test_helper"
 
 class ProphetTest < Minitest::Test
   def setup
+    skip if ENV["APPVEYOR"]
+
     return unless defined?(RubyProf)
     RubyProf.start
   end
@@ -155,7 +157,7 @@ class ProphetTest < Minitest::Test
   end
 
   def plot(m, forecast, name)
-    return if travis?
+    return if ci?
 
     m.plot(forecast).savefig("/tmp/#{name}.png")
     m.plot_components(forecast).savefig("/tmp/#{name}2.png")
@@ -165,7 +167,7 @@ class ProphetTest < Minitest::Test
     RbConfig::CONFIG["host_os"] =~ /darwin/i
   end
 
-  def travis?
-    ENV["TRAVIS"]
+  def ci?
+    ENV["CI"]
   end
 end

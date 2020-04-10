@@ -1,0 +1,25 @@
+environment:
+  matrix:
+    - RUBY_VERSION: "26-x64"
+
+cache:
+  - vendor/bundle
+
+install:
+  - set PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%
+  - bundle config --local path vendor/bundle
+  - bundle install
+
+build: off
+
+before_build:
+  - ruby -v
+  - gem -v
+  - bundle -v
+
+build_script:
+  - ridk enable
+  - bundle exec ruby ext/prophet/extconf.rb
+
+test_script:
+  - bundle exec rake test
