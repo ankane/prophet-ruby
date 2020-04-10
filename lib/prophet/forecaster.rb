@@ -241,9 +241,7 @@ module Prophet
     end
 
     def fourier_series(dates, period, series_order)
-      start = Time.utc(1970).to_i
-      # uses to_datetime first so we get UTC
-      t = Numo::DFloat.asarray(dates.map { |v| v.to_i - start }) / (3600 * 24.0)
+      t = Numo::DFloat.asarray(dates.map(&:to_i)) / (3600 * 24.0)
 
       # no need for column_stack
       series_order.times.flat_map do |i|
