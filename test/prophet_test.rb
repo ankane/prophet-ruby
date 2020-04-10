@@ -110,9 +110,14 @@ class ProphetTest < Minitest::Test
 
     m = Prophet.new(mcmc_samples: 3)
     m.fit(df, seed: 123)
-    params = m.params
+
     assert_elements_in_delta [963.497, 1006.49], m.params["lp__"][0..1].to_a
     assert_elements_in_delta [7.84723, 7.84723], m.params["stepsize__"][0..1].to_a
+
+    future = m.make_future_dataframe(periods: 365)
+    forecast = m.predict(future)
+
+    plot(m, forecast, "mcmc_samples")
   end
 
   def test_custom_seasonality

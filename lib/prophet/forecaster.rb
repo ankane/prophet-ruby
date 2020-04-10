@@ -856,8 +856,8 @@ module Prophet
     end
 
     def sample_predictive_trend(df, iteration)
-      k = @params["k"][iteration, true]
-      m = @params["m"][iteration, true]
+      k = @params["k"][iteration]
+      m = @params["m"][iteration]
       deltas = @params["delta"][iteration, true]
 
       t = Numo::NArray.asarray(df["t"].to_a)

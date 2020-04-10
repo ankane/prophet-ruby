@@ -183,6 +183,20 @@ future = m.make_future_dataframe(periods: 50, freq: "MS")
 forecast = m.predict(future)
 ```
 
+## Uncertainty Intervals
+
+Specify the width of uncertainty intervals (80% by default)
+
+```ruby
+Prophet.new(interval_width: 0.95)
+```
+
+Get uncertainty in seasonality
+
+```ruby
+Prophet.new(mcmc_samples: 300)
+```
+
 ## Non-Daily Data
 
 [Explanation](https://facebook.github.io/prophet/docs/non-daily_data.html)
