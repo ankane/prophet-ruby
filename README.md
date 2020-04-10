@@ -120,6 +120,19 @@ forecast = m.predict(future)
 
 [Explanation](https://facebook.github.io/prophet/docs/trend_changepoints.html)
 
+Plot changepoints
+
+```ruby
+fig = m.plot(forecast)
+m.add_changepoints_to_plot(fig.gca, forecast)
+```
+
+Adjust trend flexibility
+
+```ruby
+m = Prophet.new(changepoint_prior_scale: 0.5)
+```
+
 Specify the location of changepoints
 
 ```ruby
