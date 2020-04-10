@@ -159,8 +159,11 @@ class ProphetTest < Minitest::Test
   def plot(m, forecast, name)
     return if ci?
 
-    m.plot(forecast).savefig("/tmp/#{name}.png")
-    m.plot_components(forecast).savefig("/tmp/#{name}2.png")
+    fig = m.plot(forecast)
+    fig.savefig("/tmp/#{name}.png")
+    m.add_changepoints_to_plot(fig.gca, forecast)
+    fig.savefig("/tmp/#{name}2.png")
+    m.plot_components(forecast).savefig("/tmp/#{name}3.png")
   end
 
   def mac?

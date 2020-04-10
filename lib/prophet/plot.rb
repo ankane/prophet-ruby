@@ -93,6 +93,24 @@ module Prophet
       fig
     end
 
+    # in Python, this is a separate method
+    def add_changepoints_to_plot(ax, fcst, threshold: 0.01, cp_color: "r", cp_linestyle: "--", trend: true)
+      artists = []
+      if trend
+        artists << ax.plot(to_pydatetime(fcst["ds"]), fcst["trend"].map(&:to_f), c: cp_color)
+      end
+      signif_changepoints =
+        if @changepoints.size > 0
+          @changepoints[*(@params["delta"].mean(axis: 0, nan: true).abs >= threshold).where]
+        else
+          []
+        end
+      to_pydatetime(signif_changepoints).each do |cp|
+        artists << ax.axvline(x: cp, c: cp_color, ls: cp_linestyle)
+      end
+      artists
+    end
+
     private
 
     def plot_forecast_component(fcst, name, ax: nil, uncertainty: true, plot_cap: false, figsize: [10, 6])
