@@ -237,7 +237,8 @@ module Prophet
         if @n_changepoints > 0
           step = (hist_size - 1) / @n_changepoints.to_f
           cp_indexes = (@n_changepoints + 1).times.map { |i| (i * step).round }
-          @changepoints = ensure_arr(@history["ds"][*cp_indexes].to_a.last(cp_indexes.size - 1))
+          @changepoints = @history["ds"][*cp_indexes].to_a.last(cp_indexes.size - 1)
+          @changepoints = [@changepoints] unless @changepoints.is_a?(Array)
         else
           @changepoints = []
         end
@@ -996,11 +997,6 @@ module Prophet
     def laplace(loc, scale, size)
       u = Numo::DFloat.new(size).rand - 0.5
       loc - scale * u.sign * Numo::NMath.log(1 - 2 * u.abs)
-    end
-
-    def ensure_arr(value)
-      value = [value] unless value.is_a?(Array)
-      value
     end
   end
 end
