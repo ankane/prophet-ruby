@@ -944,7 +944,7 @@ module Prophet
 
     private
 
-    # Time is prefer over DateTime Ruby
+    # Time is preferred over DateTime in Ruby docs
     # use UTC to be consistent with Python
     # and so days have equal length (no DST)
     def to_datetime(vec)
