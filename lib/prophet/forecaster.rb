@@ -995,7 +995,7 @@ module Prophet
 
     # https://en.wikipedia.org/wiki/Laplace_distribution#Generating_values_from_the_Laplace_distribution
     def laplace(loc, scale, size)
-      u = Numo::DFloat.new(size).rand - 0.5
+      u = Numo::DFloat.new(size).rand(-0.5, 0.5)
       loc - scale * u.sign * Numo::NMath.log(1 - 2 * u.abs)
     end
   end
