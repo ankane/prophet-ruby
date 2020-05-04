@@ -161,7 +161,7 @@ class ProphetTest < Minitest::Test
     forecast = m.predict(future)
 
     assert_equal ["1965-01-01 00:00:00 UTC", "1965-02-01 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
-    assert_elements_in_delta [606.099342, 580.144827], forecast["yhat"].tail(2).to_a, 1
+    assert_elements_in_delta [606.099342, 580.144827], forecast["yhat"].tail(2).to_a, 3
 
     plot(m, forecast, "multiplicative_seasonality")
   end
