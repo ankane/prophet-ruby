@@ -2,8 +2,6 @@ require_relative "test_helper"
 
 class ProphetTest < Minitest::Test
   def setup
-    skip if ENV["APPVEYOR"] # Numo bug
-
     return unless defined?(RubyProf)
     RubyProf.start
   end
