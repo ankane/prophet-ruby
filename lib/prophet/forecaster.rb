@@ -778,8 +778,8 @@ module Prophet
         end
         data[component] = comp.mean(axis: 1, nan: true)
         if @uncertainty_samples
-          data[component + "_lower"] = percentile(comp, lower_p, axis: 1)
-          data[component + "_upper"] = percentile(comp, upper_p, axis: 1)
+          data[component + "_lower"] = comp.percentile(lower_p, axis: 1)
+          data[component + "_upper"] = comp.percentile(upper_p, axis: 1)
         end
       end
       Daru::DataFrame.new(data)
@@ -832,8 +832,8 @@ module Prophet
 
       series = {}
       ["yhat", "trend"].each do |key|
-        series["#{key}_lower"] = percentile(sim_values[key], lower_p, axis: 1)
-        series["#{key}_upper"] = percentile(sim_values[key], upper_p, axis: 1)
+        series["#{key}_lower"] = sim_values[key].percentile(lower_p, axis: 1)
+        series["#{key}_upper"] = sim_values[key].percentile(upper_p, axis: 1)
       end
 
       Daru::DataFrame.new(series)
@@ -896,21 +896,6 @@ module Prophet
       end
 
       trend * @y_scale + Numo::NArray.asarray(df["floor"].to_a)
-    end
-
-    def percentile(a, percentile, axis:)
-      raise Error, "Axis must be 1" if axis != 1
-
-      sorted = a.sort(axis: axis)
-      x = percentile / 100.0 * (sorted.shape[axis] - 1)
-      r = x % 1
-      i = x.floor
-      # this should use axis, but we only need axis: 1
-      if i == sorted.shape[axis] - 1
-        sorted[true, -1]
-      else
-        sorted[true, i] + r * (sorted[true, i + 1] - sorted[true, i])
-      end
     end
 
     def make_future_dataframe(periods:, freq: "D", include_history: true)
