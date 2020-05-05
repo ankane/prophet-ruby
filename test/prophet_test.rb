@@ -69,7 +69,7 @@ class ProphetTest < Minitest::Test
     df = load_example
 
     m = Prophet.new(changepoints: ["2014-01-01"])
-    m.fit(df)
+    m.fit(df, seed: 123)
     future = m.make_future_dataframe(periods: 365)
     forecast = m.predict(future)
 
@@ -143,7 +143,7 @@ class ProphetTest < Minitest::Test
 
     m = Prophet.new
     m.add_regressor("nfl_sunday")
-    m.fit(df)
+    m.fit(df, seed: 123)
 
     future = m.make_future_dataframe(periods: 365)
     future["nfl_sunday"] = future["ds"].map(&nfl_sunday)
@@ -156,7 +156,7 @@ class ProphetTest < Minitest::Test
   def test_multiplicative_seasonality
     df = Daru::DataFrame.from_csv("examples/example_air_passengers.csv")
     m = Prophet.new(seasonality_mode: "multiplicative")
-    m.fit(df)
+    m.fit(df, seed: 123)
     future = m.make_future_dataframe(periods: 50, freq: "MS")
     forecast = m.predict(future)
 
