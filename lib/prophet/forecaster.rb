@@ -329,7 +329,7 @@ module Prophet
         end
       end
       holiday_features = Daru::DataFrame.new(expanded_holidays)
-      # # Make sure column order is consistent
+      # Make sure column order is consistent
       holiday_features = holiday_features[*holiday_features.vectors.sort]
       prior_scale_list = holiday_features.vectors.map { |h| prior_scales[h.split("_delim_")[0]] }
       holiday_names = prior_scales.keys
@@ -433,14 +433,14 @@ module Prophet
         modes[@seasonality_mode].concat(holiday_names)
       end
 
-      # # Additional regressors
+      # Additional regressors
       @extra_regressors.each do |name, props|
         seasonal_features << df[name].to_df
         prior_scales << props[:prior_scale]
         modes[props[:mode]] << name
       end
 
-      # # Dummy to prevent empty X
+      # Dummy to prevent empty X
       if seasonal_features.size == 0
         seasonal_features << Daru::DataFrame.new("zeros" => [0] * df.shape[0])
         prior_scales << 1.0
@@ -459,11 +459,11 @@ module Prophet
         "component" => seasonal_features.vectors.map { |x| x.split("_delim_")[0] }
       )
 
-      # # Add total for holidays
+      # Add total for holidays
       if @train_holiday_names
         components = add_group_component(components, "holidays", @train_holiday_names.uniq)
       end
-      # # Add totals additive and multiplicative components, and regressors
+      # Add totals additive and multiplicative components, and regressors
       ["additive", "multiplicative"].each do |mode|
         components = add_group_component(components, mode + "_terms", modes[mode])
         regressors_by_mode = @extra_regressors.select { |r, props| props[:mode] == mode }
@@ -474,9 +474,9 @@ module Prophet
         modes[mode] << mode + "_terms"
         modes[mode] << "extra_regressors_" + mode
       end
-      # # After all of the additive/multiplicative groups have been added,
+      # After all of the additive/multiplicative groups have been added,
       modes[@seasonality_mode] << "holidays"
-      # # Convert to a binary matrix
+      # Convert to a binary matrix
       component_cols = Daru::DataFrame.crosstab_by_assignation(
         components["col"], components["component"], [1] * components.size
       )
