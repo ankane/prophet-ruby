@@ -192,16 +192,16 @@ module Prophet
         if df.where(df["cap"] <= df["floor"]).size > 0
           raise ArgumentError, "cap must be greater than floor (which defaults to 0)."
         end
-        df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale
+        df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale.to_f
       end
 
       df["t"] = (df["ds"] - @start) / @t_scale.to_f
       if df.vectors.include?("y")
-        df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale
+        df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale.to_f
       end
 
       @extra_regressors.each do |name, props|
-        df[name] = ((df[name] - props[:mu]) / props[:std])
+        df[name] = (df[name] - props[:mu]) / props[:std].to_f
       end
 
       df
