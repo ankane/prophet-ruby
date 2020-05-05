@@ -10,7 +10,7 @@ Supports:
 
 And gracefully handles missing data
 
-[![Build Status](https://travis-ci.org/ankane/prophet.svg?branch=master)](https://travis-ci.org/ankane/prophet)
+[![Build Status](https://travis-ci.org/ankane/prophet.svg?branch=master)](https://travis-ci.org/ankane/prophet) [![Build status](https://ci.appveyor.com/api/projects/status/8ahmsvvhum4ivnmv/branch/master?svg=true)](https://ci.appveyor.com/project/ankane/prophet/branch/master)
 
 ## Installation
 
