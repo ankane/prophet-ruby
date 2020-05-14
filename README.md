@@ -31,7 +31,7 @@ Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/qu
 Create a data frame with `ds` and `y` columns - here’s [an example](examples/example_wp_log_peyton_manning.csv) you can use
 
 ```ruby
-df = Daru::DataFrame.from_csv("example_wp_log_peyton_manning.csv")
+df = Rover.read_csv("example_wp_log_peyton_manning.csv")
 df.head(5)
 ```
 
@@ -107,7 +107,7 @@ m.plot_components(forecast).savefig("components.png")
 Forecast logistic growth instead of linear
 
 ```ruby
-df = Daru::DataFrame.from_csv("example_wp_log_R.csv")
+df = Rover.read_csv("example_wp_log_R.csv")
 df["cap"] = 8.5
 m = Prophet.new(growth: "logistic")
 m.fit(df)
@@ -146,7 +146,7 @@ m = Prophet.new(changepoints: ["2014-01-01"])
 Create a data frame with `holiday` and `ds` columns. Include all occurrences in your past data and future occurrences you’d like to forecast.
 
 ```ruby
-playoffs = Daru::DataFrame.new(
+playoffs = Rover::DataFrame.new(
   "holiday" => ["playoff"] * 14,
   "ds" => ["2008-01-13", "2009-01-03", "2010-01-16",
            "2010-01-24", "2010-02-07", "2011-01-08",
@@ -156,7 +156,7 @@ playoffs = Daru::DataFrame.new(
   "lower_window" => [0] * 14,
   "upper_window" => [1] * 14
 )
-superbowls = Daru::DataFrame.new(
+superbowls = Rover::DataFrame.new(
   "holiday" => ["superbowl"] * 3,
   "ds" => ["2010-02-07", "2014-02-02", "2016-02-07"],
   "lower_window" => [0] * 3,
@@ -208,7 +208,7 @@ forecast = m.predict(future)
 [Explanation](https://facebook.github.io/prophet/docs/multiplicative_seasonality.html)
 
 ```ruby
-df = Daru::DataFrame.from_csv("example_air_passengers.csv")
+df = Rover.read_csv("example_air_passengers.csv")
 m = Prophet.new(seasonality_mode: "multiplicative")
 m.fit(df)
 future = m.make_future_dataframe(periods: 50, freq: "MS")
@@ -236,7 +236,7 @@ Prophet.new(mcmc_samples: 300)
 Sub-daily data
 
 ```ruby
-df = Daru::DataFrame.from_csv("example_yosemite_temps.csv")
+df = Rover.read_csv("example_yosemite_temps.csv")
 m = Prophet.new(changepoint_prior_scale: 0.01).fit(df)
 future = m.make_future_dataframe(periods: 300, freq: "H")
 forecast = m.predict(future)
