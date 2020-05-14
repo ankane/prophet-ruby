@@ -153,8 +153,8 @@ playoffs = Rover::DataFrame.new(
            "2013-01-12", "2014-01-12", "2014-01-19",
            "2014-02-02", "2015-01-11", "2016-01-17",
            "2016-01-24", "2016-02-07"],
-  "lower_window" => 14,
-  "upper_window" => 14
+  "lower_window" => 0,
+  "upper_window" => 1
 )
 superbowls = Rover::DataFrame.new(
   "holiday" => "superbowl",
