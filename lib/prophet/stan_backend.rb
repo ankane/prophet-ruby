@@ -127,7 +127,7 @@ module Prophet
       stan_data["t_change"] = stan_data["t_change"].to_a
       stan_data["s_a"] = stan_data["s_a"].to_a
       stan_data["s_m"] = stan_data["s_m"].to_a
-      stan_data["X"] = stan_data["X"].to_matrix.to_a
+      stan_data["X"] = stan_data["X"].to_numo.to_a
       stan_init["delta"] = stan_init["delta"].to_a
       stan_init["beta"] = stan_init["beta"].to_a
       [stan_init, stan_data]

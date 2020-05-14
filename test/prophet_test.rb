@@ -26,22 +26,22 @@ class ProphetTest < Minitest::Test
     end
 
     future = m.make_future_dataframe(periods: 365)
-    assert_equal ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2).map(&:to_s)
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2)
 
     forecast = m.predict(future)
-    assert_equal ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
-    assert_elements_in_delta [8.243210, 8.261121], forecast["yhat"].tail(2).to_a
-    assert_elements_in_delta [7.498851, 7.552077], forecast["yhat_lower"].tail(2).to_a
-    assert_elements_in_delta [9.000535, 9.030622], forecast["yhat_upper"].tail(2).to_a
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2)
+    assert_elements_in_delta [8.243210, 8.261121], forecast["yhat"].tail(2)
+    assert_elements_in_delta [7.498851, 7.552077], forecast["yhat_lower"].tail(2)
+    assert_elements_in_delta [9.000535, 9.030622], forecast["yhat_upper"].tail(2)
 
     future = m.make_future_dataframe(periods: 365, include_history: false)
-    assert_equal ["2016-01-21 00:00:00 UTC", "2016-01-22 00:00:00 UTC"], future["ds"].head(2).map(&:to_s)
+    assert_times ["2016-01-21 00:00:00 UTC", "2016-01-22 00:00:00 UTC"], future["ds"].head(2)
 
     plot(m, forecast, "linear")
   end
 
   def test_logistic
-    df = Daru::DataFrame.from_csv("examples/example_wp_log_R.csv")
+    df = Rover.read_csv("examples/example_wp_log_R.csv")
     df["cap"] = 8.5
 
     m = Prophet.new(growth: "logistic")
@@ -57,10 +57,10 @@ class ProphetTest < Minitest::Test
     future["cap"] = 8.5
 
     forecast = m.predict(future)
-    assert_equal ["2016-12-29 00:00:00 UTC", "2016-12-30 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
-    assert_elements_in_delta [7.796425, 7.714560], forecast["yhat"].tail(2).to_a
-    assert_elements_in_delta [7.503935, 7.398324], forecast["yhat_lower"].tail(2).to_a
-    assert_elements_in_delta [8.099635, 7.997564], forecast["yhat_upper"].tail(2).to_a
+    assert_times ["2016-12-29 00:00:00 UTC", "2016-12-30 00:00:00 UTC"], forecast["ds"].tail(2)
+    assert_elements_in_delta [7.796425, 7.714560], forecast["yhat"].tail(2)
+    assert_elements_in_delta [7.503935, 7.398324], forecast["yhat_lower"].tail(2)
+    assert_elements_in_delta [8.099635, 7.997564], forecast["yhat_upper"].tail(2)
 
     plot(m, forecast, "logistic")
   end
@@ -92,13 +92,13 @@ class ProphetTest < Minitest::Test
     assert m.train_holiday_names
 
     future = m.make_future_dataframe(periods: 365)
-    assert_equal ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2).map(&:to_s)
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2)
 
     forecast = m.predict(future)
-    assert_equal ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
-    assert_elements_in_delta [8.093708, 8.111485], forecast["yhat"].tail(2).to_a
-    assert_elements_in_delta [7.400929, 7.389584], forecast["yhat_lower"].tail(2).to_a
-    assert_elements_in_delta [8.863748, 8.867099], forecast["yhat_upper"].tail(2).to_a
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2)
+    assert_elements_in_delta [8.093708, 8.111485], forecast["yhat"].tail(2)
+    assert_elements_in_delta [7.400929, 7.389584], forecast["yhat_lower"].tail(2)
+    assert_elements_in_delta [8.863748, 8.867099], forecast["yhat_upper"].tail(2)
 
     plot(m, forecast, "holidays")
   end
@@ -154,42 +154,68 @@ class ProphetTest < Minitest::Test
   end
 
   def test_multiplicative_seasonality
-    df = Daru::DataFrame.from_csv("examples/example_air_passengers.csv")
+    df = Rover.read_csv("examples/example_air_passengers.csv")
     m = Prophet.new(seasonality_mode: "multiplicative")
     m.fit(df, seed: 123)
     future = m.make_future_dataframe(periods: 50, freq: "MS")
     forecast = m.predict(future)
 
-    assert_equal ["1965-01-01 00:00:00 UTC", "1965-02-01 00:00:00 UTC"], forecast["ds"].tail(2).map(&:to_s)
-    assert_elements_in_delta [606.099342, 580.144827], forecast["yhat"].tail(2).to_a, 3
+    assert_times ["1965-01-01 00:00:00 UTC", "1965-02-01 00:00:00 UTC"], forecast["ds"].tail(2)
+    assert_elements_in_delta [606.099342, 580.144827], forecast["yhat"].tail(2), 3
 
     plot(m, forecast, "multiplicative_seasonality")
   end
 
   def test_subdaily
-    df = Daru::DataFrame.from_csv("examples/example_yosemite_temps.csv")
-    index = df.where(df["y"].eq("NaN")).index
-    df["y"][*index] = nil
+    df = Rover.read_csv("examples/example_yosemite_temps.csv")
+    # bug with Numo - https://github.com/ruby-numo/numo-narray/issues/162
+    # df["y"][df["y"] == "NaN"] = nil
+    df["y"] = df["y"].map { |v| v == "NaN" ? nil : v }
 
     m = Prophet.new(changepoint_prior_scale: 0.01)
     m.fit(df, seed: 123)
     # different t_change sampling produces different params
 
     future = m.make_future_dataframe(periods: 300, freq: "H")
-    assert_equal ["2017-07-17 11:00:00 UTC", "2017-07-17 12:00:00 UTC"], future["ds"].tail(2).map(&:to_s)
+    assert_times ["2017-07-17 11:00:00 UTC", "2017-07-17 12:00:00 UTC"], future["ds"].tail(2)
 
     forecast = m.predict(future)
-    assert_elements_in_delta [7.755761, 7.388094], forecast["yhat"].tail(2).to_a, 1
-    assert_elements_in_delta [-8.481951, -8.933871], forecast["yhat_lower"].tail(2).to_a, 4
-    assert_elements_in_delta [22.990261, 23.190911], forecast["yhat_upper"].tail(2).to_a, 4
+    assert_elements_in_delta [7.755761, 7.388094], forecast["yhat"].tail(2), 1
+    assert_elements_in_delta [-8.481951, -8.933871], forecast["yhat_lower"].tail(2), 4
+    assert_elements_in_delta [22.990261, 23.190911], forecast["yhat_upper"].tail(2), 4
 
     plot(m, forecast, "subdaily")
+  end
+
+  def test_daru
+    df = Daru::DataFrame.from_csv("examples/example_wp_log_peyton_manning.csv")
+
+    m = Prophet.new
+    m.fit(df, seed: 123)
+
+    if mac?
+      assert_in_delta 8004.75, m.params["lp__"][0]
+      assert_in_delta -0.359494, m.params["k"][0]
+      assert_in_delta 0.626234, m.params["m"][0]
+    end
+
+    future = m.make_future_dataframe(periods: 365)
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2)
+
+    forecast = m.predict(future)
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2)
+    assert_elements_in_delta [8.243210, 8.261121], forecast["yhat"].tail(2)
+    assert_elements_in_delta [7.498851, 7.552077], forecast["yhat_lower"].tail(2)
+    assert_elements_in_delta [9.000535, 9.030622], forecast["yhat_upper"].tail(2)
+
+    future = m.make_future_dataframe(periods: 365, include_history: false)
+    assert_times ["2016-01-21 00:00:00 UTC", "2016-01-22 00:00:00 UTC"], future["ds"].head(2)
   end
 
   private
 
   def load_example
-    Daru::DataFrame.from_csv("examples/example_wp_log_peyton_manning.csv")
+    Rover.read_csv("examples/example_wp_log_peyton_manning.csv")
   end
 
   def plot(m, forecast, name)

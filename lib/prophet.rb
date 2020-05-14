@@ -1,6 +1,6 @@
 # dependencies
 require "cmdstan"
-require "daru"
+require "rover"
 require "numo/narray"
 
 # stdlib

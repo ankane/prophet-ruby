@@ -8,16 +8,16 @@ module Prophet
         fig = ax.get_figure
       end
       fcst_t = to_pydatetime(fcst["ds"])
-      ax.plot(to_pydatetime(@history["ds"]), @history["y"].map(&:to_f), "k.")
-      ax.plot(fcst_t, fcst["yhat"].map(&:to_f), ls: "-", c: "#0072B2")
-      if fcst.vectors.include?("cap") && plot_cap
-        ax.plot(fcst_t, fcst["cap"].map(&:to_f), ls: "--", c: "k")
+      ax.plot(to_pydatetime(@history["ds"]), @history["y"].to_a, "k.")
+      ax.plot(fcst_t, fcst["yhat"].to_a, ls: "-", c: "#0072B2")
+      if fcst.include?("cap") && plot_cap
+        ax.plot(fcst_t, fcst["cap"].to_a, ls: "--", c: "k")
       end
-      if @logistic_floor && fcst.vectors.include?("floor") && plot_cap
-        ax.plot(fcst_t, fcst["floor"].map(&:to_f), ls: "--", c: "k")
+      if @logistic_floor && fcst.include?("floor") && plot_cap
+        ax.plot(fcst_t, fcst["floor"].to_a, ls: "--", c: "k")
       end
       if uncertainty && @uncertainty_samples
-        ax.fill_between(fcst_t, fcst["yhat_lower"].map(&:to_f), fcst["yhat_upper"].map(&:to_f), color: "#0072B2", alpha: 0.2)
+        ax.fill_between(fcst_t, fcst["yhat_lower"].to_a, fcst["yhat_upper"].to_a, color: "#0072B2", alpha: 0.2)
       end
       # Specify formatting to workaround matplotlib issue #12925
       locator = dates.AutoDateLocator.new(interval_multiples: false)
@@ -33,25 +33,25 @@ module Prophet
 
     def plot_components(fcst, uncertainty: true, plot_cap: true, weekly_start: 0, yearly_start: 0, figsize: nil)
       components = ["trend"]
-      if @train_holiday_names && fcst.vectors.include?("holidays")
+      if @train_holiday_names && fcst.include?("holidays")
         components << "holidays"
       end
       # Plot weekly seasonality, if present
-      if @seasonalities["weekly"] && fcst.vectors.include?("weekly")
+      if @seasonalities["weekly"] && fcst.include?("weekly")
         components << "weekly"
       end
       # Yearly if present
-      if @seasonalities["yearly"] && fcst.vectors.include?("yearly")
+      if @seasonalities["yearly"] && fcst.include?("yearly")
         components << "yearly"
       end
       # Other seasonalities
-      components.concat(@seasonalities.keys.select { |name| fcst.vectors.include?(name) && !["weekly", "yearly"].include?(name) }.sort)
+      components.concat(@seasonalities.keys.select { |name| fcst.include?(name) && !["weekly", "yearly"].include?(name) }.sort)
       regressors = {"additive" => false, "multiplicative" => false}
       @extra_regressors.each do |name, props|
         regressors[props[:mode]] = true
       end
       ["additive", "multiplicative"].each do |mode|
-        if regressors[mode] && fcst.vectors.include?("extra_regressors_#{mode}")
+        if regressors[mode] && fcst.include?("extra_regressors_#{mode}")
           components << "extra_regressors_#{mode}"
         end
       end
@@ -97,11 +97,11 @@ module Prophet
     def add_changepoints_to_plot(ax, fcst, threshold: 0.01, cp_color: "r", cp_linestyle: "--", trend: true)
       artists = []
       if trend
-        artists << ax.plot(to_pydatetime(fcst["ds"]), fcst["trend"].map(&:to_f), c: cp_color)
+        artists << ax.plot(to_pydatetime(fcst["ds"]), fcst["trend"].to_a, c: cp_color)
       end
       signif_changepoints =
         if @changepoints.size > 0
-          (@params["delta"].mean(axis: 0, nan: true).abs >= threshold).mask(@changepoints)
+          (@params["delta"].mean(axis: 0, nan: true).abs >= threshold).mask(@changepoints.to_numo)
         else
           []
         end
@@ -120,15 +120,15 @@ module Prophet
         ax = fig.add_subplot(111)
       end
       fcst_t = to_pydatetime(fcst["ds"])
-      artists += ax.plot(fcst_t, fcst[name].map(&:to_f), ls: "-", c: "#0072B2")
-      if fcst.vectors.include?("cap") && plot_cap
-        artists += ax.plot(fcst_t, fcst["cap"].map(&:to_f), ls: "--", c: "k")
+      artists += ax.plot(fcst_t, fcst[name].to_a, ls: "-", c: "#0072B2")
+      if fcst.include?("cap") && plot_cap
+        artists += ax.plot(fcst_t, fcst["cap"].to_a, ls: "--", c: "k")
       end
-      if @logistic_floor && fcst.vectors.include?("floor") && plot_cap
-        ax.plot(fcst_t, fcst["floor"].map(&:to_f), ls: "--", c: "k")
+      if @logistic_floor && fcst.include?("floor") && plot_cap
+        ax.plot(fcst_t, fcst["floor"].to_a, ls: "--", c: "k")
       end
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(fcst_t, fcst[name + "_lower"].map(&:to_f), fcst[name + "_upper"].map(&:to_f), color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(fcst_t, fcst[name + "_lower"].to_a, fcst[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       # Specify formatting to workaround matplotlib issue #12925
       locator = dates.AutoDateLocator.new(interval_multiples: false)
@@ -145,17 +145,17 @@ module Prophet
     end
 
     def seasonality_plot_df(ds)
-      df_dict = {"ds" => ds, "cap" => [1.0] * ds.size, "floor" => [0.0] * ds.size}
+      df_dict = {"ds" => ds, "cap" => 1.0, "floor" => 0.0}
       @extra_regressors.each_key do |name|
-        df_dict[name] = [0.0] * ds.size
+        df_dict[name] = 0.0
       end
       # Activate all conditional seasonality columns
       @seasonalities.values.each do |props|
         if props[:condition_name]
-          df_dict[props[:condition_name]] = [true] * ds.size
+          df_dict[props[:condition_name]] = true
         end
       end
-      df = Daru::DataFrame.new(df_dict)
+      df = Rover::DataFrame.new(df_dict)
       df = setup_dataframe(df)
       df
     end
@@ -172,9 +172,9 @@ module Prophet
       df_w = seasonality_plot_df(days)
       seas = predict_seasonal_components(df_w)
       days = days.map { |v| v.strftime("%A") }
-      artists += ax.plot(days.size.times.to_a, seas[name].map(&:to_f), ls: "-", c: "#0072B2")
+      artists += ax.plot(days.size.times.to_a, seas[name].to_a, ls: "-", c: "#0072B2")
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(days.size.times.to_a, seas[name + "_lower"].map(&:to_f), seas[name + "_upper"].map(&:to_f), color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(days.size.times.to_a, seas[name + "_lower"].to_a, seas[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       ax.set_xticks(days.size.times.to_a)
@@ -198,9 +198,9 @@ module Prophet
       days = 365.times.map { |i| start + i + yearly_start }
       df_y = seasonality_plot_df(days)
       seas = predict_seasonal_components(df_y)
-      artists += ax.plot(to_pydatetime(df_y["ds"]), seas[name].map(&:to_f), ls: "-", c: "#0072B2")
+      artists += ax.plot(to_pydatetime(df_y["ds"]), seas[name].to_a, ls: "-", c: "#0072B2")
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas[name + "_lower"].map(&:to_f), seas[name + "_upper"].map(&:to_f), color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas[name + "_lower"].to_a, seas[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       months = dates.MonthLocator.new((1..12).to_a, bymonthday: 1, interval: 2)
@@ -231,9 +231,9 @@ module Prophet
       days = plot_points.times.map { |i| Time.at(start + i * step).utc }
       df_y = seasonality_plot_df(days)
       seas = predict_seasonal_components(df_y)
-      artists += ax.plot(to_pydatetime(df_y["ds"]), seas[name].map(&:to_f), ls: "-", c: "#0072B2")
+      artists += ax.plot(to_pydatetime(df_y["ds"]), seas[name].to_a, ls: "-", c: "#0072B2")
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas[name + "_lower"].map(&:to_f), seas[name + "_upper"].map(&:to_f), color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas[name + "_lower"].to_a, seas[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       step = (finish - start) / (7 - 1).to_f
@@ -281,7 +281,7 @@ module Prophet
 
     def to_pydatetime(v)
       datetime = PyCall.import_module("datetime")
-      v.map { |v| datetime.datetime.utcfromtimestamp(v.to_i) }
+      v.map { |v| datetime.datetime.utcfromtimestamp(v.to_i) }.to_a
     end
   end
 end

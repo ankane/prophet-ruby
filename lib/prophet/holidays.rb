@@ -6,7 +6,7 @@ module Prophet
     end
 
     def make_holidays_df(year_list, country)
-      holidays_df.where(holidays_df["country"].eq(country) & holidays_df["year"].in(year_list))["ds", "holiday"]
+      holidays_df[(holidays_df["country"] == country) & (holidays_df["year"].in?(year_list))][["ds", "holiday"]]
     end
 
     # TODO marshal on installation
@@ -20,7 +20,7 @@ module Prophet
           holidays["country"] << row["country"]
           holidays["year"] << row["year"]
         end
-        Daru::DataFrame.new(holidays)
+        Rover::DataFrame.new(holidays)
       end
     end
   end

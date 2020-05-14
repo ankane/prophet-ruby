@@ -1,3 +1,7 @@
+## 0.2.0 (unreleased)
+
+- Switched from Daru to Rover
+
 ## 0.1.1 (2020-04-10)
 
 - Added `add_changepoints_to_plot`

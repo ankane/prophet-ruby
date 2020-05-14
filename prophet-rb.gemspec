@@ -17,12 +17,13 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 2.4"
 
   spec.add_dependency "cmdstan", ">= 0.1.2"
-  spec.add_dependency "daru"
   spec.add_dependency "numo-narray", ">= 0.9.1.7" # for percentile
+  spec.add_dependency "rover-df"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "minitest", ">= 5"
+  spec.add_development_dependency "daru"
   spec.add_development_dependency "matplotlib"
-  spec.add_development_dependency "ruby-prof"
+  # spec.add_development_dependency "ruby-prof"
 end

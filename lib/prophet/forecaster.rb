@@ -82,12 +82,12 @@ module Prophet
         raise ArgumentError, "Parameter \"changepoint_range\" must be in [0, 1]"
       end
       if @holidays
-        if !@holidays.is_a?(Daru::DataFrame) && @holidays.vectors.include?("ds") && @holidays.vectors.include?("holiday")
+        if !@holidays.is_a?(Rover::DataFrame) && @holidays.include?("ds") && @holidays.include?("holiday")
           raise ArgumentError, "holidays must be a DataFrame with \"ds\" and \"holiday\" columns."
         end
         @holidays["ds"] = to_datetime(@holidays["ds"])
-        has_lower = @holidays.vectors.include?("lower_window")
-        has_upper = @holidays.vectors.include?("upper_window")
+        has_lower = @holidays.include?("lower_window")
+        has_upper = @holidays.include?("upper_window")
         if has_lower ^ has_upper # xor
           raise ArgumentError, "Holidays must have both lower_window and upper_window, or neither"
         end
@@ -141,7 +141,7 @@ module Prophet
     end
 
     def setup_dataframe(df, initialize_scales: false)
-      if df.vectors.include?("y")
+      if df.include?("y")
         df["y"] = df["y"].map(&:to_f)
         raise ArgumentError "Found infinity in column y." unless df["y"].all?(&:finite?)
       end
@@ -152,7 +152,7 @@ module Prophet
       raise ArgumentError, "Found NaN in column ds." if df["ds"].any?(&:nil?)
 
       @extra_regressors.each_key do |name|
-        if !df.vectors.include?(name)
+        if !df.include?(name)
           raise ArgumentError, "Regressor #{name.inspect} missing from dataframe"
         end
         df[name] = df[name].map(&:to_f)
@@ -163,7 +163,7 @@ module Prophet
       @seasonalities.values.each do |props|
         condition_name = props[:condition_name]
         if condition_name
-          if !df.vectors.include?(condition_name)
+          if !df.include?(condition_name)
             raise ArgumentError, "Condition #{condition_name.inspect} missing from dataframe"
           end
           if df.where(!df[condition_name].in([true, false])).any?
@@ -172,31 +172,28 @@ module Prophet
         end
       end
 
-      if df.index.name == "ds"
-        df.index.name = nil
-      end
-      df = df.sort(["ds"])
+      df = df.sort_by { |r| r["ds"] }
 
       initialize_scales(initialize_scales, df)
 
-      if @logistic_floor && !df.vectors.include?("floor")
+      if @logistic_floor && !df.include?("floor")
         raise ArgumentError, "Expected column \"floor\"."
       else
         df["floor"] = 0
       end
 
       if @growth == "logistic"
-        unless df.vectors.include?("cap")
+        unless df.include?("cap")
           raise ArgumentError, "Capacities must be supplied for logistic growth in column \"cap\""
         end
-        if df.where(df["cap"] <= df["floor"]).size > 0
+        if df[df["cap"] <= df["floor"]].size > 0
           raise ArgumentError, "cap must be greater than floor (which defaults to 0)."
         end
         df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale.to_f
       end
 
       df["t"] = (df["ds"] - @start) / @t_scale.to_f
-      if df.vectors.include?("y")
+      if df.include?("y")
         df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale.to_f
       end
 
@@ -237,22 +234,21 @@ module Prophet
         if @n_changepoints > 0
           step = (hist_size - 1) / @n_changepoints.to_f
           cp_indexes = (@n_changepoints + 1).times.map { |i| (i * step).round }
-          @changepoints = @history["ds"][*cp_indexes].to_a.last(cp_indexes.size - 1)
-          @changepoints = [@changepoints] unless @changepoints.is_a?(Array)
+          @changepoints = Rover::Vector.new(@history["ds"].to_a.values_at(*cp_indexes)).tail(-1)
         else
           @changepoints = []
         end
       end
 
       if @changepoints.size > 0
-        @changepoints_t = (Numo::DFloat.cast(@changepoints.map(&:to_i).sort) - @start.to_i) / @t_scale.to_f
+        @changepoints_t = (@changepoints.map(&:to_i).sort.to_numo.cast_to(Numo::DFloat) - @start.to_i) / @t_scale.to_f
       else
         @changepoints_t = Numo::NArray.asarray([0])
       end
     end
 
     def fourier_series(dates, period, series_order)
-      t = Numo::DFloat.asarray(dates.map(&:to_i)) / (3600 * 24.0)
+      t = dates.map(&:to_i).to_numo / (3600 * 24.0)
 
       # no need for column_stack
       series_order.times.flat_map do |i|
@@ -264,11 +260,11 @@ module Prophet
 
     def make_seasonality_features(dates, period, series_order, prefix)
       features = fourier_series(dates, period, series_order)
-      Daru::DataFrame.new(features.map.with_index { |v, i| ["#{prefix}_delim_#{i + 1}", v] }.to_h)
+      Rover::DataFrame.new(features.map.with_index { |v, i| ["#{prefix}_delim_#{i + 1}", v] }.to_h)
     end
 
     def construct_holiday_dataframe(dates)
-      all_holidays = Daru::DataFrame.new
+      all_holidays = Rover::DataFrame.new
       if @holidays
         all_holidays = @holidays.dup
       end
@@ -280,12 +276,12 @@ module Prophet
       # Drop future holidays not previously seen in training data
       if @train_holiday_names
         # Remove holiday names didn't show up in fit
-        all_holidays = all_holidays.where(all_holidays["holiday"].in(@train_holiday_names))
+        all_holidays = all_holidays[all_holidays["holiday"].in?(@train_holiday_names)]
 
         # Add holiday names in fit but not in predict with ds as NA
-        holidays_to_add = Daru::DataFrame.new(
-          "holiday" => @train_holiday_names.where(!@train_holiday_names.in(all_holidays["holiday"]))
-        )
+        holidays_to_add = Rover::DataFrame.new({
+          "holiday" => @train_holiday_names[!@train_holiday_names.in?(all_holidays["holiday"])]
+        })
         all_holidays = all_holidays.concat(holidays_to_add)
       end
 
@@ -319,7 +315,7 @@ module Prophet
 
         lw.upto(uw).each do |offset|
           occurrence = dt ? dt + offset : nil
-          loc = occurrence ? row_index.index(occurrence) : nil
+          loc = occurrence ? row_index.to_a.index(occurrence) : nil
           key = "#{row["holiday"]}_delim_#{offset >= 0 ? "+" : "-"}#{offset.abs}"
           if loc
             expanded_holidays[key][loc] = 1.0
@@ -328,14 +324,14 @@ module Prophet
           end
         end
       end
-      holiday_features = Daru::DataFrame.new(expanded_holidays)
+      holiday_features = Rover::DataFrame.new(expanded_holidays)
       # Make sure column order is consistent
-      holiday_features = holiday_features[*holiday_features.vectors.sort]
-      prior_scale_list = holiday_features.vectors.map { |h| prior_scales[h.split("_delim_")[0]] }
+      holiday_features = holiday_features[holiday_features.vector_names.sort]
+      prior_scale_list = holiday_features.vector_names.map { |h| prior_scales[h.split("_delim_")[0]] }
       holiday_names = prior_scales.keys
       # Store holiday names used in fit
-      if !@train_holiday_names
-        @train_holiday_names = Daru::Vector.new(holiday_names)
+      if @train_holiday_names.nil?
+        @train_holiday_names = Rover::Vector.new(holiday_names)
       end
       [holiday_features, prior_scale_list, holiday_names]
     end
@@ -435,14 +431,14 @@ module Prophet
 
       # Additional regressors
       @extra_regressors.each do |name, props|
-        seasonal_features << df[name].to_df
+        seasonal_features << Rover::DataFrame.new({name => df[name]})
         prior_scales << props[:prior_scale]
         modes[props[:mode]] << name
       end
 
       # Dummy to prevent empty X
       if seasonal_features.size == 0
-        seasonal_features << Daru::DataFrame.new("zeros" => [0] * df.shape[0])
+        seasonal_features << Rover::DataFrame.new({"zeros" => [0] * df.shape[0]})
         prior_scales << 1.0
       end
 
@@ -454,9 +450,9 @@ module Prophet
     end
 
     def regressor_column_matrix(seasonal_features, modes)
-      components = Daru::DataFrame.new(
+      components = Rover::DataFrame.new(
         "col" => seasonal_features.shape[1].times.to_a,
-        "component" => seasonal_features.vectors.map { |x| x.split("_delim_")[0] }
+        "component" => seasonal_features.vector_names.map { |x| x.split("_delim_")[0] }
       )
 
       # Add total for holidays
@@ -477,17 +473,12 @@ module Prophet
       # After all of the additive/multiplicative groups have been added,
       modes[@seasonality_mode] << "holidays"
       # Convert to a binary matrix
-      component_cols = Daru::DataFrame.crosstab_by_assignation(
-        components["col"], components["component"], [1] * components.size
-      )
-      component_cols.each_vector do |v|
-        v.map! { |vi| vi.nil? ? 0 : vi }
-      end
-      component_cols.rename_vectors(:_id => "col")
+      component_cols = components["col"].crosstab(components["component"])
+      component_cols["col"] = component_cols.delete("_")
 
       # Add columns for additive and multiplicative terms, if missing
       ["additive_terms", "multiplicative_terms"].each do |name|
-        component_cols[name] = 0 unless component_cols.vectors.include?(name)
+        component_cols[name] = 0 unless component_cols.include?(name)
       end
 
       # TODO validation
@@ -496,10 +487,10 @@ module Prophet
     end
 
     def add_group_component(components, name, group)
-      new_comp = components.where(components["component"].in(group)).dup
+      new_comp = components[components["component"].in?(group)].dup
       group_cols = new_comp["col"].uniq
       if group_cols.size > 0
-        new_comp = Daru::DataFrame.new("col" => group_cols, "component" => [name] * group_cols.size)
+        new_comp = Rover::DataFrame.new({"col" => group_cols, "component" => name})
         components = components.concat(new_comp)
       end
       components
@@ -575,8 +566,8 @@ module Prophet
     end
 
     def linear_growth_init(df)
-      i0 = df["ds"].index.min
-      i1 = df["ds"].index.max
+      i0 = 0
+      i1 = df.size - 1
       t = df["t"][i1] - df["t"][i0]
       k = (df["y_scaled"][i1] - df["y_scaled"][i0]) / t
       m = df["y_scaled"][i0] - k * df["t"][i0]
@@ -584,8 +575,8 @@ module Prophet
     end
 
     def logistic_growth_init(df)
-      i0 = df["ds"].index.min
-      i1 = df["ds"].index.max
+      i0 = 0
+      i1 = df.size - 1
       t = df["t"][i1] - df["t"][i0]
 
       # Force valid values, in case y > cap or y < 0
@@ -614,8 +605,13 @@ module Prophet
     def fit(df, **kwargs)
       raise Error, "Prophet object can only be fit once" if @history
 
-      history = df.where(!df["y"].in([nil, Float::NAN]))
-      raise Error, "Data has less than 2 non-nil rows" if history.shape[0] < 2
+      if defined?(Daru::DataFrame) && df.is_a?(Daru::DataFrame)
+        df = Rover::DataFrame.new(df.to_h)
+      end
+      raise ArgumentError, "Must be a data frame" unless df.is_a?(Rover::DataFrame)
+
+      history = df[!df["y"].missing]
+      raise Error, "Data has less than 2 non-nil rows" if history.size < 2
 
       @history_dates = to_datetime(df["ds"]).sort
       history = setup_dataframe(history, initialize_scales: true)
@@ -702,10 +698,10 @@ module Prophet
 
       # Drop columns except ds, cap, floor, and trend
       cols = ["ds", "trend"]
-      cols << "cap" if df.vectors.include?("cap")
+      cols << "cap" if df.include?("cap")
       cols << "floor" if @logistic_floor
       # Add in forecast components
-      df2 = df_concat_axis_one([df[*cols], intervals, seasonal_components])
+      df2 = df_concat_axis_one([df[cols], intervals, seasonal_components])
       df2["yhat"] = df2["trend"] * (df2["multiplicative_terms"] + 1) + df2["additive_terms"]
       df2
     end
@@ -740,8 +736,7 @@ module Prophet
         k_t[indx] += deltas[s]
         m_t[indx] += gammas[s]
       end
-      # need df_values to prevent memory from blowing up
-      df_values(cap) / (1 + Numo::NMath.exp(-k_t * (t - m_t)))
+      cap.to_numo / (1 + Numo::NMath.exp(-k_t * (t - m_t)))
     end
 
     def predict_trend(df)
@@ -767,10 +762,10 @@ module Prophet
         upper_p = 100 * (1.0 + @interval_width) / 2
       end
 
-      x = df_values(seasonal_features)
+      x = seasonal_features.to_numo
       data = {}
-      component_cols.vectors.each do |component|
-        beta_c = @params["beta"] * Numo::NArray.asarray(component_cols[component].to_a)
+      component_cols.vector_names.each do |component|
+        beta_c =  @params["beta"] * component_cols[component].to_numo
 
         comp = x.dot(beta_c.transpose)
         if @component_modes["additive"].include?(component)
@@ -782,7 +777,7 @@ module Prophet
           data[component + "_upper"] = comp.percentile(upper_p, axis: 1)
         end
       end
-      Daru::DataFrame.new(data)
+      Rover::DataFrame.new(data)
     end
 
     def sample_posterior_predictive(df)
@@ -793,9 +788,9 @@ module Prophet
       seasonal_features, _, component_cols, _ = make_all_seasonality_features(df)
 
       # convert to Numo for performance
-      seasonal_features = df_values(seasonal_features)
-      additive_terms = df_values(component_cols["additive_terms"])
-      multiplicative_terms = df_values(component_cols["multiplicative_terms"])
+      seasonal_features = seasonal_features.to_numo
+      additive_terms = component_cols["additive_terms"].to_numo
+      multiplicative_terms = component_cols["multiplicative_terms"].to_numo
 
       sim_values = {"yhat" => [], "trend" => []}
       n_iterations.times do |i|
@@ -836,7 +831,7 @@ module Prophet
         series["#{key}_upper"] = sim_values[key].percentile(upper_p, axis: 1)
       end
 
-      Daru::DataFrame.new(series)
+      Rover::DataFrame.new(series)
     end
 
     def sample_model(df, seasonal_features, iteration, s_a, s_m)
@@ -924,8 +919,8 @@ module Prophet
       end
       dates.select! { |d| d > last_date }
       dates = dates.last(periods)
-      dates = @history_dates + dates if include_history
-      Daru::DataFrame.new("ds" => dates)
+      dates = @history_dates.to_numo.concatenate(Numo::NArray.cast(dates)) if include_history
+      Rover::DataFrame.new({"ds" => dates})
     end
 
     private
@@ -935,35 +930,26 @@ module Prophet
     # and so days have equal length (no DST)
     def to_datetime(vec)
       return if vec.nil?
-      vec.map do |v|
-        case v
-        when Time
-          v.utc
-        when Date
-          v.to_datetime.to_time.utc
-        else
-          DateTime.parse(v.to_s).to_time.utc
+      vec =
+        vec.map do |v|
+          case v
+          when Time
+            v.utc
+          when Date
+            v.to_datetime.to_time.utc
+          else
+            DateTime.parse(v.to_s).to_time.utc
+          end
         end
-      end
+      Rover::Vector.new(vec)
     end
 
     # okay to do in-place
     def df_concat_axis_one(dfs)
       dfs[1..-1].each do |df|
-        df.each_vector_with_index do |v, k|
-          dfs[0][k] = v
-        end
+        dfs[0].merge!(df)
       end
       dfs[0]
-    end
-
-    def df_values(df)
-      if df.is_a?(Daru::Vector)
-        Numo::NArray.asarray(df.to_a)
-      else
-        # TODO make more performant
-        Numo::NArray.asarray(df.to_matrix.to_a)
-      end
     end
 
     # https://en.wikipedia.org/wiki/Poisson_distribution#Generating_Poisson-distributed_random_variables
