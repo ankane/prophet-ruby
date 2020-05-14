@@ -32,7 +32,7 @@ Create a data frame with `ds` and `y` columns - here’s [an example](examples/e
 
 ```ruby
 df = Rover.read_csv("example_wp_log_peyton_manning.csv")
-df.head(5)
+df.head
 ```
 
 ds | y
@@ -54,7 +54,7 @@ Make a data frame with a `ds` column for future predictions
 
 ```ruby
 future = m.make_future_dataframe(periods: 365)
-future.tail(5)
+future.tail
 ```
 
 ds |
@@ -69,7 +69,7 @@ Make predictions
 
 ```ruby
 forecast = m.predict(future)
-forecast["ds", "yhat", "yhat_lower", "yhat_upper"].tail(5)
+forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail
 ```
 
 ds | yhat | yhat_lower | yhat_upper
@@ -147,20 +147,20 @@ Create a data frame with `holiday` and `ds` columns. Include all occurrences in 
 
 ```ruby
 playoffs = Rover::DataFrame.new(
-  "holiday" => ["playoff"] * 14,
+  "holiday" => "playoff",
   "ds" => ["2008-01-13", "2009-01-03", "2010-01-16",
            "2010-01-24", "2010-02-07", "2011-01-08",
            "2013-01-12", "2014-01-12", "2014-01-19",
            "2014-02-02", "2015-01-11", "2016-01-17",
            "2016-01-24", "2016-02-07"],
-  "lower_window" => [0] * 14,
-  "upper_window" => [1] * 14
+  "lower_window" => 14,
+  "upper_window" => 14
 )
 superbowls = Rover::DataFrame.new(
-  "holiday" => ["superbowl"] * 3,
+  "holiday" => "superbowl",
   "ds" => ["2010-02-07", "2014-02-02", "2016-02-07"],
-  "lower_window" => [0] * 3,
-  "upper_window" => [1] * 3
+  "lower_window" => 0,
+  "upper_window" => 1
 )
 holidays = playoffs.concat(superbowls)
 
@@ -245,6 +245,15 @@ forecast = m.predict(future)
 ## Resources
 
 - [Forecasting at Scale](https://peerj.com/preprints/3190.pdf)
+
+## Upgrading
+
+### 0.2.0
+
+Prophet now uses [Rover](https://github.com/ankane/rover) instead of Daru. Two changes you may need to make are:
+
+- `Rover.read_csv` instead of `Daru::DataFrame.from_csv`
+- `df[["ds", "yhat"]]` instead of `df["ds", "yhat"]`
 
 ## Credits
 
