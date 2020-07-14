@@ -64,6 +64,8 @@ class ForecastTest < Minitest::Test
     assert_equal expected.keys, predicted.keys
   end
 
+  # TODO support hourly
+  # use same time zone as first key in series
   def test_hourly
     series = {}
     time = Time.parse("2018-04-01")
