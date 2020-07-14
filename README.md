@@ -45,7 +45,7 @@ Works great with [Groupdate](https://github.com/ankane/groupdate)
 
 ```ruby
 series = User.group_by_day(:created_at).count
-Trend.forecast(series)
+Prophet.forecast(series)
 ```
 
 ## Advanced API
