@@ -21,30 +21,36 @@ module Prophet
     Forecaster.new(**kwargs)
   end
 
+  # TODO detect more intervals, like N minutes
   def self.forecast(series, count: 10)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
-    times = series.keys
-    dates = times.all? { |k| k.is_a?(Date) }
-    times = times.map(&:to_time) unless dates
+    # check type to determine output format
+    dates = series.keys.all? { |k| k.is_a?(Date) }
+    times = series.keys.map(&:to_time)
+
+    minute = times.all? { |t| t.sec == 0 && t.nsec == 0 }
+    hour = minute && times.all? { |t| t.min == 0 }
+    day = hour && times.all? { |t| t.hour == 0 }
+    week = day && times.map { |k| k.wday }.uniq.size == 1
+    month = day && times.all? { |k| k.day == 1 }
+    quarter = month && times.all? { |k| k.month % 3 == 1 }
+    year = quarter && times.all? { |k| k.month == 1 }
 
     freq =
-      if dates
-        if times.all? { |k| k.day == 1 }
-          if times.all? { |k| k.month == 1 }
-            "YS"
-          elsif times.all? { |k| k.month % 3 == 1 }
-            "QS"
-          else
-            "MS"
-          end
-        elsif times.map { |k| k.wday }.uniq.size == 1
-          "W"
-        else
-          "D"
-        end
+      if year
+        "YS"
+      elsif quarter
+        "QS"
+      elsif month
+        "MS"
+      elsif week
+        "W"
+      elsif day
+        "D"
+      # elsif hour
+      # elsif minute
       else
-        # TODO support times
         raise ArgumentError, "Unknown frequency"
       end
 
