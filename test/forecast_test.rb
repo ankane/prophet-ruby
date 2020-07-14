@@ -92,6 +92,22 @@ class ForecastTest < Minitest::Test
     assert predicted.keys.all? { |k| k.utc? }
   end
 
+  def test_hourly_active_support
+    require "active_support/time"
+
+    series = {}
+    time = ActiveSupport::TimeZone["Eastern Time (US & Canada)"].parse("2018-04-01")
+    192.times do
+      series[time] = time.hour % 2
+      time += 3600
+    end
+
+    expected = series.to_a.last(24).to_h
+    predicted = Prophet.forecast(series.first(168).to_h, count: 24)
+    assert_equal expected.keys, predicted.keys
+    assert predicted.keys.all? { |k| k.time_zone.name == "Eastern Time (US & Canada)" }
+  end
+
   def test_count
     series = {}
     date = Date.parse("2018-04-01")

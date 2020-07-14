@@ -26,10 +26,12 @@ module Prophet
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
     # check type to determine output format
-    dates = series.keys.all? { |k| k.is_a?(Date) }
-    times = series.keys.map(&:to_time)
-    time_zone = nil # times.first&.zone
-    utc = times.first.utc?
+    # check for before converting to time
+    keys = series.keys
+    dates = keys.all? { |k| k.is_a?(Date) }
+    time_zone = keys.first.time_zone if keys.first.respond_to?(:time_zone)
+    utc = keys.first.utc? if keys.first.respond_to?(:utc?)
+    times = keys.map(&:to_time)
 
     minute = times.all? { |t| t.sec == 0 && t.nsec == 0 }
     hour = minute && times.all? { |t| t.min == 0 }
@@ -65,6 +67,8 @@ module Prophet
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
     forecast = m.predict(future)
     result = forecast[["ds", "yhat"]].to_a
+
+    # use the same format as input
     if dates
       result.each { |v| v["ds"] = v["ds"].to_date }
     elsif time_zone
@@ -72,7 +76,7 @@ module Prophet
     elsif utc
       result.each { |v| v["ds"] = v["ds"].utc }
     else
-      result.each { |v| v["ds"] = v["ds"].getlocal }
+      result.each { |v| v["ds"] = v["ds"].localtime }
     end
     result.map { |v| [v["ds"], v["yhat"]] }.to_h
   end
