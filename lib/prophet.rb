@@ -22,9 +22,18 @@ module Prophet
   end
 
   def self.forecast(series, count: 10)
+    raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
+
     # TODO detect frequency based on series
     # TODO support times
     raise ArgumentError, "expected Date" unless series.keys.all? { |k| k.is_a?(Date) }
+
+    freq =
+      if series.keys.map { |k| k.wday }.uniq.size == 1
+        "W"
+      else
+        "D"
+      end
 
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
 
@@ -32,7 +41,7 @@ module Prophet
     m.logger.level = ::Logger::FATAL
     m.fit(df)
 
-    future = m.make_future_dataframe(periods: count, include_history: false)
+    future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
     forecast = m.predict(future)
     forecast[["ds", "yhat"]].to_a.map { |v| [v["ds"].to_date, v["yhat"]]  }.to_h
   end
