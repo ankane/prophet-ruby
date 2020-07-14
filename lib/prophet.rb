@@ -62,6 +62,6 @@ module Prophet
     else
       # TODO set time zone
     end
-    result.map { |v| [v["ds"], v["yhat"]]  }.to_h
+    result.map { |v| [v["ds"], v["yhat"]] }.to_h
   end
 end
