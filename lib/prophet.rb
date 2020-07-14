@@ -21,6 +21,8 @@ module Prophet
     Forecaster.new(**kwargs)
   end
 
+  # to add time support in future, see
+  # https://github.com/ankane/prophet/commit/06e3562835cbcf06b8431f3a91fe2618d4703eb7
   def self.forecast(series, count: 10)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
