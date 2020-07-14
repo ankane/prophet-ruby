@@ -58,6 +58,7 @@ module Prophet
         raise ArgumentError, "Unknown frequency"
       end
 
+    # use series, not times, so dates are handled correctly
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
 
     m = Prophet.new
