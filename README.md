@@ -41,6 +41,13 @@ Specify the number of predictions to return
 Prophet.forecast(series, count: 3)
 ```
 
+Works great with [Groupdate](https://github.com/ankane/groupdate)
+
+```ruby
+series = User.group_by_day(:created_at).count
+Trend.forecast(series)
+```
+
 ## Advanced API
 
 Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The Ruby API follows the Python API and supports the same features.
