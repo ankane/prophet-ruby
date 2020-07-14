@@ -28,6 +28,8 @@ module Prophet
     # check type to determine output format
     dates = series.keys.all? { |k| k.is_a?(Date) }
     times = series.keys.map(&:to_time)
+    time_zone = nil # times.first&.zone
+    utc = times.first.utc?
 
     minute = times.all? { |t| t.sec == 0 && t.nsec == 0 }
     hour = minute && times.all? { |t| t.min == 0 }
@@ -48,8 +50,8 @@ module Prophet
         "W"
       elsif day
         "D"
-      # elsif hour
-      # elsif minute
+      elsif hour
+        "H"
       else
         raise ArgumentError, "Unknown frequency"
       end
@@ -65,8 +67,12 @@ module Prophet
     result = forecast[["ds", "yhat"]].to_a
     if dates
       result.each { |v| v["ds"] = v["ds"].to_date }
+    elsif time_zone
+      result.each { |v| v["ds"] = v["ds"].in_time_zone(time_zone) }
+    elsif utc
+      result.each { |v| v["ds"] = v["ds"].utc }
     else
-      # TODO set time zone
+      result.each { |v| v["ds"] = v["ds"].getlocal }
     end
     result.map { |v| [v["ds"], v["yhat"]] }.to_h
   end

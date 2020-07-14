@@ -64,20 +64,32 @@ class ForecastTest < Minitest::Test
     assert_equal expected.keys, predicted.keys
   end
 
-  # TODO support hourly
-  # use same time zone as first key in series
-  def test_hourly
+  def test_hourly_local
     series = {}
     time = Time.parse("2018-04-01")
     192.times do
-      series[time] = time.hour
+      series[time] = time.hour % 2
       time += 3600
     end
 
-    error = assert_raises(ArgumentError) do
-      Prophet.forecast(series)
+    expected = series.to_a.last(24).to_h
+    predicted = Prophet.forecast(series.first(168).to_h, count: 24)
+    assert_equal expected.keys, predicted.keys
+    assert predicted.keys.all? { |k| !k.utc? }
+  end
+
+  def test_hourly_utc
+    series = {}
+    time = Time.parse("2018-04-01").utc
+    192.times do
+      series[time] = time.hour % 2
+      time += 3600
     end
-    assert_equal "Unknown frequency", error.message
+
+    expected = series.to_a.last(24).to_h
+    predicted = Prophet.forecast(series.first(168).to_h, count: 24)
+    assert_equal expected.keys, predicted.keys
+    assert predicted.keys.all? { |k| k.utc? }
   end
 
   def test_count
