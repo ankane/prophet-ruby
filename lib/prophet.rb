@@ -26,7 +26,8 @@ module Prophet
 
     times = series.keys
     # TODO support times
-    raise ArgumentError, "expected Date" unless times.all? { |k| k.is_a?(Date) }
+    bad_time = times.find { |k| !k.is_a?(Date) }
+    raise ArgumentError, "expected Date, got #{bad_time.class.name}" if bad_time
 
     freq =
       if times.all? { |k| k.day == 1 }

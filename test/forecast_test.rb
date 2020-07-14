@@ -65,7 +65,17 @@ class ForecastTest < Minitest::Test
   end
 
   def test_hourly
-    # TODO
+    series = {}
+    time = Time.parse("2018-04-01")
+    192.times do
+      series[time] = time.hour
+      time += 3600
+    end
+
+    error = assert_raises(ArgumentError) do
+      Prophet.forecast(series)
+    end
+    assert_equal "expected Date, got Time", error.message
   end
 
   def test_count
