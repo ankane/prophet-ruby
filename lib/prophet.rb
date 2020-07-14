@@ -25,23 +25,27 @@ module Prophet
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
     times = series.keys
-    # TODO support times
-    bad_key = times.find { |k| !k.is_a?(Date) }
-    raise ArgumentError, "expected Date, got #{bad_key.class.name}" if bad_key
+    dates = times.all? { |k| k.is_a?(Date) }
+    times = times.map(&:to_time) unless dates
 
     freq =
-      if times.all? { |k| k.day == 1 }
-        if times.all? { |k| k.month == 1 }
-          "YS"
-        elsif times.all? { |k| k.month % 3 == 1 }
-          "QS"
+      if dates
+        if times.all? { |k| k.day == 1 }
+          if times.all? { |k| k.month == 1 }
+            "YS"
+          elsif times.all? { |k| k.month % 3 == 1 }
+            "QS"
+          else
+            "MS"
+          end
+        elsif times.map { |k| k.wday }.uniq.size == 1
+          "W"
         else
-          "MS"
+          "D"
         end
-      elsif times.map { |k| k.wday }.uniq.size == 1
-        "W"
       else
-        "D"
+        # TODO support times
+        raise ArgumentError, "Unknown frequency"
       end
 
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
@@ -52,6 +56,12 @@ module Prophet
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
     forecast = m.predict(future)
-    forecast[["ds", "yhat"]].to_a.map { |v| [v["ds"].to_date, v["yhat"]]  }.to_h
+    result = forecast[["ds", "yhat"]].to_a
+    if dates
+      result.each { |v| v["ds"] = v["ds"].to_date }
+    else
+      # TODO set time zone
+    end
+    result.map { |v| [v["ds"], v["yhat"]]  }.to_h
   end
 end

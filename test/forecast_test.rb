@@ -77,7 +77,7 @@ class ForecastTest < Minitest::Test
     error = assert_raises(ArgumentError) do
       Prophet.forecast(series)
     end
-    assert_equal "expected Date, got Time", error.message
+    assert_equal "Unknown frequency", error.message
   end
 
   def test_count
@@ -100,10 +100,9 @@ class ForecastTest < Minitest::Test
       series[i] = i
     end
 
-    error = assert_raises(ArgumentError) do
+    assert_raises(NoMethodError) do
       Prophet.forecast(series)
     end
-    assert_equal "expected Date, got Integer", error.message
   end
 
   def test_few_data_points
