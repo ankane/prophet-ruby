@@ -40,6 +40,30 @@ class ForecastTest < Minitest::Test
     assert_equal expected.keys, predicted.keys
   end
 
+  def test_quarterly
+    series = {}
+    30.times do |i|
+      date = Date.new(2000 + i / 4, (i % 4) * 3 + 1)
+      series[date] = i % 2
+    end
+
+    expected = series.to_a.last(10).to_h
+    predicted = Prophet.forecast(series.first(20).to_h)
+    assert_equal expected.keys, predicted.keys
+  end
+
+  def test_yearly
+    series = {}
+    30.times do |i|
+      date = Date.new(1970 + i)
+      series[date] = i % 2
+    end
+
+    expected = series.to_a.last(10).to_h
+    predicted = Prophet.forecast(series.first(20).to_h)
+    assert_equal expected.keys, predicted.keys
+  end
+
   def test_hourly
     # TODO
   end

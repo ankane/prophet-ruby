@@ -911,8 +911,21 @@ module Prophet
         dates = (periods + 1).times.map { |i| last_date + i * week }
       when "MS"
         dates = [last_date]
+        # TODO reset day from last date, but keep time
         periods.times do
           dates << dates.last.to_datetime.next_month.to_time.utc
+        end
+      when "QS"
+        dates = [last_date]
+        # TODO reset day and month from last date, but keep time
+        periods.times do
+          dates << dates.last.to_datetime.next_month.next_month.next_month.to_time.utc
+        end
+      when "YS"
+        dates = [last_date]
+        # TODO reset day and month from last date, but keep time
+        periods.times do
+          dates << dates.last.to_datetime.next_year.to_time.utc
         end
       else
         raise ArgumentError, "Unknown freq: #{freq}"
