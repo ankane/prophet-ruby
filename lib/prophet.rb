@@ -20,4 +20,19 @@ module Prophet
   def self.new(**kwargs)
     Forecaster.new(**kwargs)
   end
+
+  def self.forecast(series, count: 10)
+    # TODO support times
+    raise ArgumentError, "expected Date" unless series.keys.all? { |k| k.is_a?(Date) }
+
+    df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
+
+    m = Prophet.new
+    m.logger.level = ::Logger::FATAL
+    m.fit(df)
+
+    future = m.make_future_dataframe(periods: count, include_history: false)
+    forecast = m.predict(future)
+    forecast[["ds", "yhat"]].to_a.map { |v| [v["ds"].to_date, v["yhat"]]  }.to_h
+  end
 end

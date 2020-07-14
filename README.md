@@ -20,11 +20,32 @@ Add this line to your application’s Gemfile:
 gem 'prophet-rb'
 ```
 
-## Documentation
+## Basic API [master]
+
+Get future predictions for a time series
+
+```ruby
+series = {
+  Date.parse("2020-01-01") => 100,
+  Date.parse("2020-01-02") => 150,
+  Date.parse("2020-01-03") => 136,
+  # ...
+}
+
+Prophet.forecast(series)
+```
+
+Specify the number of predictions to return
+
+```ruby
+Prophet.forecast(series, count: 3)
+```
+
+## Advanced API
 
 Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The Ruby API follows the Python API and supports the same features.
 
-## Quick Start
+## Advanced Quick Start
 
 [Explanation](https://facebook.github.io/prophet/docs/quick_start.html)
 

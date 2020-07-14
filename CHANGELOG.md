@@ -1,3 +1,7 @@
+## 0.2.1 (unreleased)
+
+- Added `forecast` method
+
 ## 0.2.0 (2020-05-13)
 
 - Switched from Daru to Rover
