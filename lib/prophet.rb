@@ -51,7 +51,7 @@ module Prophet
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
 
     m = Prophet.new
-    m.logger.level = ::Logger::FATAL
+    m.logger.level = ::Logger::FATAL # no logging
     m.fit(df)
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
