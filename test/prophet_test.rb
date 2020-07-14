@@ -181,8 +181,8 @@ class ProphetTest < Minitest::Test
 
     forecast = m.predict(future)
     assert_elements_in_delta [7.755761, 7.388094], forecast["yhat"].tail(2), 1
-    assert_elements_in_delta [-8.481951, -8.933871], forecast["yhat_lower"].tail(2), 4
-    assert_elements_in_delta [22.990261, 23.190911], forecast["yhat_upper"].tail(2), 4
+    assert_elements_in_delta [-8.481951, -8.933871], forecast["yhat_lower"].tail(2), 5
+    assert_elements_in_delta [22.990261, 23.190911], forecast["yhat_upper"].tail(2), 5
 
     plot(m, forecast, "subdaily")
   end
