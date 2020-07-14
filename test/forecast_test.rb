@@ -29,7 +29,15 @@ class ForecastTest < Minitest::Test
   end
 
   def test_monthly
-    # TODO
+    series = {}
+    34.times do |i|
+      date = Date.new(2018 + (i / 12), i % 12 + 1, 1)
+      series[date] = i % 2
+    end
+
+    expected = series.to_a.last(10).to_h
+    predicted = Prophet.forecast(series.first(24).to_h)
+    assert_equal expected.keys, predicted.keys
   end
 
   def test_hourly

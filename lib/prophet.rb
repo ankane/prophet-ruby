@@ -23,13 +23,14 @@ module Prophet
 
   def self.forecast(series, count: 10)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
-
-    # TODO detect frequency based on series
     # TODO support times
     raise ArgumentError, "expected Date" unless series.keys.all? { |k| k.is_a?(Date) }
 
+    # TODO support year and quarter
     freq =
-      if series.keys.map { |k| k.wday }.uniq.size == 1
+      if series.keys.all? { |k| k.day == 1 }
+        "MS"
+      elsif series.keys.map { |k| k.wday }.uniq.size == 1
         "W"
       else
         "D"
