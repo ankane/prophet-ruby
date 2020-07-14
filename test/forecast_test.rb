@@ -94,6 +94,18 @@ class ForecastTest < Minitest::Test
     assert_elements_in_delta expected.values, predicted.values
   end
 
+  def test_bad_key
+    series = {}
+    10.times do |i|
+      series[i] = i
+    end
+
+    error = assert_raises(ArgumentError) do
+      Prophet.forecast(series)
+    end
+    assert_equal "expected Date, got Integer", error.message
+  end
+
   def test_few_data_points
     error = assert_raises(ArgumentError) do
       Prophet.forecast({})
