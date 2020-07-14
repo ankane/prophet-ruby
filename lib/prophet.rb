@@ -22,6 +22,7 @@ module Prophet
   end
 
   def self.forecast(series, count: 10)
+    # TODO detect frequency based on series
     # TODO support times
     raise ArgumentError, "expected Date" unless series.keys.all? { |k| k.is_a?(Date) }
 

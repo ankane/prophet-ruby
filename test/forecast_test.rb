@@ -1,7 +1,7 @@
 require_relative "test_helper"
 
 class ForecastTest < Minitest::Test
-  def test_dates
+  def test_daily
     series = {}
     date = Date.parse("2018-04-01")
     38.times do
@@ -15,7 +15,15 @@ class ForecastTest < Minitest::Test
     assert_elements_in_delta expected.values, predicted.values
   end
 
-  def test_times
+  def test_weekly
+    # TODO
+  end
+
+  def test_monthly
+    # TODO
+  end
+
+  def test_hourly
     # TODO
   end
 
