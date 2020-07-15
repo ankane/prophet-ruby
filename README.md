@@ -50,7 +50,7 @@ Prophet.forecast(series)
 
 ## Advanced API
 
-Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The Ruby API follows the Python API and supports the same features.
+Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Rover](https://github.com/ankane/rover) for data frames.
 
 ## Advanced Quick Start
 
