@@ -20,7 +20,7 @@ Add this line to your application’s Gemfile:
 gem 'prophet-rb'
 ```
 
-## Simple API [master]
+## Simple API
 
 Get future predictions for a time series
 
