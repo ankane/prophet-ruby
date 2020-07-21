@@ -187,6 +187,15 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "subdaily")
   end
 
+  def test_no_changepoints
+    df = load_example
+
+    m = Prophet.new(changepoints: [])
+    m.fit(df, seed: 123)
+    future = m.make_future_dataframe(periods: 365)
+    forecast = m.predict(future)
+  end
+
   def test_daru
     df = Daru::DataFrame.from_csv("examples/example_wp_log_peyton_manning.csv")
 

@@ -671,8 +671,10 @@ module Prophet
       # If no changepoints were requested, replace delta with 0s
       if @changepoints.size == 0
         # Fold delta into the base rate k
-        @params["k"] = @params["k"] + @params["delta"].reshape(-1)
-        @params["delta"] = Numo::DFloat.zeros(@params["delta"].shape).reshape(-1, 1)
+        # Numo doesn't support -1 with reshape
+        negative_one = @params["delta"].shape.inject(&:*)
+        @params["k"] = @params["k"] + @params["delta"].reshape(negative_one)
+        @params["delta"] = Numo::DFloat.zeros(@params["delta"].shape).reshape(negative_one, 1)
       end
 
       self
