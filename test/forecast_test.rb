@@ -15,7 +15,7 @@ class ForecastTest < Minitest::Test
     assert_elements_in_delta expected.values, predicted.values
   end
 
-  def test_delta_zero
+  def test_constant_series
     series = {}
     date = Date.parse("2018-04-01")
     38.times do |n|
