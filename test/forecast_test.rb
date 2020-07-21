@@ -19,7 +19,7 @@ class ForecastTest < Minitest::Test
     series = {}
     date = Date.parse("2018-04-01")
     38.times do |n|
-      series[date - n] = 9.99
+      series[date + n] = 9.99
     end
 
     expected = series.to_a.last(10).to_h
