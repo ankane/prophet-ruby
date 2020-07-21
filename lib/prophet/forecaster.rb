@@ -659,7 +659,7 @@ module Prophet
         # Nothing to fit.
         @params = stan_init
         @params["sigma_obs"] = 1e-9
-        @params.each do |par|
+        @params.each do |par, _|
           @params[par] = Numo::NArray.asarray(@params[par])
         end
       elsif @mcmc_samples > 0
