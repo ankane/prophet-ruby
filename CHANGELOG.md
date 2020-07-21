@@ -1,3 +1,8 @@
+## 0.2.2 (unreleased)
+
+- Fixed error with constant series
+- Fixed error with no changepoints
+
 ## 0.2.1 (2020-07-15)
 
 - Added `forecast` method
