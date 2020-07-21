@@ -15,6 +15,19 @@ class ForecastTest < Minitest::Test
     assert_elements_in_delta expected.values, predicted.values
   end
 
+  def test_constant_series
+    series = {}
+    date = Date.parse("2018-04-01")
+    38.times do |n|
+      series[date + n] = 9.99
+    end
+
+    expected = series.to_a.last(10).to_h
+    predicted = Prophet.forecast(series.first(28).to_h)
+    assert_equal expected.keys, predicted.keys
+    assert_elements_in_delta expected.values, predicted.values
+  end
+
   def test_weekly
     series = {}
     date = Date.parse("2018-04-01")
