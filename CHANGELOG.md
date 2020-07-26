@@ -1,4 +1,4 @@
-## 0.2.2 (unreleased)
+## 0.2.2 (2020-07-26)
 
 - Fixed error with constant series
 - Fixed error with no changepoints
