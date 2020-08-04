@@ -118,7 +118,7 @@ Plot the forecast
 m.plot(forecast).savefig("forecast.png")
 ```
 
-![Forecast](https://blazer.dokkuapp.com/assets/prophet/forecast-a9d43195b8ad23703eda7bb8b52b8a758efb4699e2313f32d7bbdfaa2f4275f6.png)
+![Forecast](https://blazer.dokkuapp.com/assets/prophet/forecast-77cf453fda67d1b462c6c22aee3a02572203b71c4517fedecc1f438cd374a876.png)
 
 Plot components
 
@@ -126,7 +126,7 @@ Plot components
 m.plot_components(forecast).savefig("components.png")
 ```
 
-![Components](https://blazer.dokkuapp.com/assets/prophet/components-b9e31bfcf77e57bbd503c0bcff5e5544e66085b90709b06dd96c5f622a87d84f.png)
+![Components](https://blazer.dokkuapp.com/assets/prophet/components-2cdd260e23bc89824ecca25f6bfe394deb5821d60b7e0e551469c90d204acd67.png)
 
 ## Saturating Forecasts
 
