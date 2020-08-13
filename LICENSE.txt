@@ -1,7 +1,7 @@
 MIT License
 
-Copyright (c) 2020 Andrew Kane
 Copyright (c) Facebook, Inc. and its affiliates.
+Copyright (c) 2020 Andrew Kane
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
