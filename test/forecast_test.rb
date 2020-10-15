@@ -91,6 +91,18 @@ class ForecastTest < Minitest::Test
     assert_elements_in_delta expected.values, predicted.values
   end
 
+  def test_time
+    series = {}
+    10.times do |i|
+      series[Time.at(i)] = i
+    end
+
+    error = assert_raises(ArgumentError) do
+      Prophet.forecast(series)
+    end
+    assert_equal "Use the advanced API for times for now", error.message
+  end
+
   def test_bad_key
     series = {}
     10.times do |i|

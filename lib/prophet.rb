@@ -28,6 +28,7 @@ module Prophet
 
     keys = series.keys
     bad_key = keys.find { |k| !k.is_a?(Date) }
+    raise ArgumentError, "Use the advanced API for times for now" if bad_key && bad_key.is_a?(Time)
     raise ArgumentError, "Expected Date, got #{bad_key.class.name}" if bad_key
 
     week = keys.map { |k| k.wday }.uniq.size == 1

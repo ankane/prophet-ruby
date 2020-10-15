@@ -1,3 +1,7 @@
+## 0.2.3 (unreleased)
+
+- Improved error message for times with simple API
+
 ## 0.2.2 (2020-07-26)
 
 - Fixed error with constant series
