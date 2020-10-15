@@ -1,4 +1,4 @@
-## 0.2.3 (unreleased)
+## 0.2.3 (2020-10-14)
 
 - Added support for times to `forecast` method
 
