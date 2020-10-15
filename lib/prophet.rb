@@ -32,7 +32,7 @@ module Prophet
     utc = keys.first.utc? if keys.first.respond_to?(:utc?)
     times = keys.map(&:to_time)
 
-    day = times.all? { |t| t.hour == 0 }
+    day = times.all? { |t| t.hour == 0 && t.min == 0 && t.sec == 0 && t.nsec == 0 }
     week = day && times.map { |k| k.wday }.uniq.size == 1
     month = day && times.all? { |k| k.day == 1 }
     quarter = month && times.all? { |k| k.month % 3 == 1 }
