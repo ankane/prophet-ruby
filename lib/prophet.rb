@@ -50,13 +50,13 @@ module Prophet
       elsif day
         "D"
       else
-        times = times.sort
-        diff = []
-        (times.size - 1).times do |i|
-          diff << (times[i + 1] - times[i])
-        end
+        diff = Rover::Vector.new(times.sort).diff.to_numo[1..-1]
         min_diff = diff.min.to_i
-        raise "Unknown frequency" unless diff.all? { |v| v % min_diff == 0 }
+
+        # could be another common denominator
+        # but keep it simple for now
+        raise "Unknown frequency" unless (diff % min_diff).eq(0).all?
+
         "#{min_diff}S"
       end
 

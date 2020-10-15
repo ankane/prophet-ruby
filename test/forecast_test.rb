@@ -121,6 +121,19 @@ class ForecastTest < Minitest::Test
     assert predicted.keys.all? { |k| k.time_zone.name == "Eastern Time (US & Canada)" }
   end
 
+  def test_unknown_frequency
+    series = {}
+    10.times do |i|
+      series[Time.at(i * 10)] = i
+    end
+    series[Time.at(3)] = 0
+
+    error = assert_raises do
+      Prophet.forecast(series)
+    end
+    assert_equal "Unknown frequency", error.message
+  end
+
   def test_count
     series = {}
     date = Date.parse("2018-04-01")
