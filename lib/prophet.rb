@@ -50,7 +50,7 @@ module Prophet
       elsif day
         "D"
       else
-        diff = Rover::Vector.new(times.sort).diff.to_numo[1..-1]
+        diff = Rover::Vector.new(times).sort.diff.to_numo[1..-1]
         min_diff = diff.min.to_i
 
         # could be another common divisor
