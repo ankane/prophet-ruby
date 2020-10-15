@@ -53,7 +53,7 @@ module Prophet
         diff = Rover::Vector.new(times.sort).diff.to_numo[1..-1]
         min_diff = diff.min.to_i
 
-        # could be another common denominator
+        # could be another common divisor
         # but keep it simple for now
         raise "Unknown frequency" unless (diff % min_diff).eq(0).all?
 
