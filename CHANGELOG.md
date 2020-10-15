@@ -1,6 +1,6 @@
 ## 0.2.3 (unreleased)
 
-- Improved error message for times with simple API
+- Added support for times to `forecast` method
 
 ## 0.2.2 (2020-07-26)
 

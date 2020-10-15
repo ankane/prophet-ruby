@@ -901,6 +901,9 @@ module Prophet
       # TODO add more freq
       # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases
       case freq
+      when /\A\d+S\z/
+        secs = freq.to_i
+        dates = (periods + 1).times.map { |i| last_date + i * secs }
       when "H"
         hour = 3600
         dates = (periods + 1).times.map { |i| last_date + i * hour }

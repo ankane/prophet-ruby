@@ -77,6 +77,50 @@ class ForecastTest < Minitest::Test
     assert_equal expected.keys, predicted.keys
   end
 
+  def test_hourly_local
+    series = {}
+    time = Time.parse("2018-04-01")
+    192.times do
+      series[time] = time.hour % 2
+      time += 3600
+    end
+
+    expected = series.to_a.last(24).to_h
+    predicted = Prophet.forecast(series.first(168).to_h, count: 24)
+    assert_equal expected.keys, predicted.keys
+    assert predicted.keys.all? { |k| !k.utc? }
+  end
+
+  def test_hourly_utc
+    series = {}
+    time = Time.parse("2018-04-01").utc
+    192.times do
+      series[time] = time.hour % 2
+      time += 3600
+    end
+
+    expected = series.to_a.last(24).to_h
+    predicted = Prophet.forecast(series.first(168).to_h, count: 24)
+    assert_equal expected.keys, predicted.keys
+    assert predicted.keys.all? { |k| k.utc? }
+  end
+
+  def test_hourly_active_support
+    require "active_support/time"
+
+    series = {}
+    time = ActiveSupport::TimeZone["Eastern Time (US & Canada)"].parse("2018-04-01")
+    192.times do
+      series[time] = time.hour % 2
+      time += 3600
+    end
+
+    expected = series.to_a.last(24).to_h
+    predicted = Prophet.forecast(series.first(168).to_h, count: 24)
+    assert_equal expected.keys, predicted.keys
+    assert predicted.keys.all? { |k| k.time_zone.name == "Eastern Time (US & Canada)" }
+  end
+
   def test_count
     series = {}
     date = Date.parse("2018-04-01")
@@ -91,28 +135,15 @@ class ForecastTest < Minitest::Test
     assert_elements_in_delta expected.values, predicted.values
   end
 
-  def test_time
-    series = {}
-    10.times do |i|
-      series[Time.at(i)] = i
-    end
-
-    error = assert_raises(ArgumentError) do
-      Prophet.forecast(series)
-    end
-    assert_equal "Use the advanced API for times for now", error.message
-  end
-
   def test_bad_key
     series = {}
     10.times do |i|
       series[i] = i
     end
 
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(NoMethodError) do
       Prophet.forecast(series)
     end
-    assert_equal "Expected Date, got Integer", error.message
   end
 
   def test_few_data_points

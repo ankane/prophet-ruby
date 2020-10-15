@@ -21,20 +21,22 @@ module Prophet
     Forecaster.new(**kwargs)
   end
 
-  # to add time support in future, see
-  # https://github.com/ankane/prophet/commit/06e3562835cbcf06b8431f3a91fe2618d4703eb7
   def self.forecast(series, count: 10)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
+    # check type to determine output format
+    # check for before converting to time
     keys = series.keys
-    bad_key = keys.find { |k| !k.is_a?(Date) }
-    raise ArgumentError, "Use the advanced API for times for now" if bad_key && bad_key.is_a?(Time)
-    raise ArgumentError, "Expected Date, got #{bad_key.class.name}" if bad_key
+    dates = keys.all? { |k| k.is_a?(Date) }
+    time_zone = keys.first.time_zone if keys.first.respond_to?(:time_zone)
+    utc = keys.first.utc? if keys.first.respond_to?(:utc?)
+    times = keys.map(&:to_time)
 
-    week = keys.map { |k| k.wday }.uniq.size == 1
-    month = keys.all? { |k| k.day == 1 }
-    quarter = month && keys.all? { |k| k.month % 3 == 1 }
-    year = quarter && keys.all? { |k| k.month == 1 }
+    day = times.all? { |t| t.hour == 0 }
+    week = day && times.map { |k| k.wday }.uniq.size == 1
+    month = day && times.all? { |k| k.day == 1 }
+    quarter = month && times.all? { |k| k.month % 3 == 1 }
+    year = quarter && times.all? { |k| k.month == 1 }
 
     freq =
       if year
@@ -45,10 +47,20 @@ module Prophet
         "MS"
       elsif week
         "W"
-      else
+      elsif day
         "D"
+      else
+        times = times.sort
+        diff = []
+        (times.size - 1).times do |i|
+          diff << (times[i + 1] - times[i])
+        end
+        min_diff = diff.min.to_i
+        raise "Unknown frequency" unless diff.all? { |v| v % min_diff == 0 }
+        "#{min_diff}S"
       end
 
+    # use series, not times, so dates are handled correctly
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
 
     m = Prophet.new
@@ -57,6 +69,18 @@ module Prophet
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
     forecast = m.predict(future)
-    forecast[["ds", "yhat"]].to_a.map { |v| [v["ds"].to_date, v["yhat"]] }.to_h
+    result = forecast[["ds", "yhat"]].to_a
+
+    # use the same format as input
+    if dates
+      result.each { |v| v["ds"] = v["ds"].to_date }
+    elsif time_zone
+      result.each { |v| v["ds"] = v["ds"].in_time_zone(time_zone) }
+    elsif utc
+      result.each { |v| v["ds"] = v["ds"].utc }
+    else
+      result.each { |v| v["ds"] = v["ds"].localtime }
+    end
+    result.map { |v| [v["ds"], v["yhat"]] }.to_h
   end
 end
