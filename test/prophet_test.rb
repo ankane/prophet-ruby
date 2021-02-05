@@ -20,8 +20,8 @@ class ProphetTest < Minitest::Test
     m.fit(df, seed: 123)
 
     if mac?
-      assert_in_delta 8004.75, m.params["lp__"][0]
-      assert_in_delta -0.359494, m.params["k"][0]
+      assert_in_delta 8004.75, m.params["lp__"][0], 1
+      assert_in_delta -0.359494, m.params["k"][0], 0.01
       assert_in_delta 0.626234, m.params["m"][0]
     end
 
@@ -84,8 +84,8 @@ class ProphetTest < Minitest::Test
     m.fit(df, seed: 123)
 
     if mac?
-      assert_in_delta 8040.81, m.params["lp__"][0]
-      assert_in_delta -0.36428, m.params["k"][0]
+      assert_in_delta 8040.81, m.params["lp__"][0], 1
+      assert_in_delta -0.36428, m.params["k"][0], 0.01
       assert_in_delta 0.626888, m.params["m"][0]
     end
 
@@ -203,8 +203,8 @@ class ProphetTest < Minitest::Test
     m.fit(df, seed: 123)
 
     if mac?
-      assert_in_delta 8004.75, m.params["lp__"][0]
-      assert_in_delta -0.359494, m.params["k"][0]
+      assert_in_delta 8004.75, m.params["lp__"][0], 1
+      assert_in_delta -0.359494, m.params["k"][0], 0.01
       assert_in_delta 0.626234, m.params["m"][0]
     end
 
