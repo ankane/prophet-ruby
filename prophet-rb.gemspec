@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.license       = "MIT"
 
   spec.author        = "Andrew Kane"
-  spec.email         = "andrew@chartkick.com"
+  spec.email         = "andrew@ankane.org"
 
   spec.files         = Dir["*.{md,txt}", "{data-raw,ext,lib,stan}/**/*"]
   spec.require_path  = "lib"
@@ -19,13 +19,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency "cmdstan", ">= 0.1.2"
   spec.add_dependency "numo-narray", ">= 0.9.1.7" # for percentile
   spec.add_dependency "rover-df"
-
-  spec.add_development_dependency "bundler"
-  spec.add_development_dependency "rake"
-  spec.add_development_dependency "minitest", ">= 5"
-  spec.add_development_dependency "daru"
-  spec.add_development_dependency "matplotlib"
-  spec.add_development_dependency "activesupport"
-  spec.add_development_dependency "tzinfo-data"
-  # spec.add_development_dependency "ruby-prof"
 end
