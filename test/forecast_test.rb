@@ -154,7 +154,7 @@ class ForecastTest < Minitest::Test
       series[i] = i
     end
 
-    error = assert_raises(NoMethodError) do
+    assert_raises(NoMethodError) do
       Prophet.forecast(series)
     end
   end
