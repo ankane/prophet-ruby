@@ -168,9 +168,7 @@ class ProphetTest < Minitest::Test
 
   def test_subdaily
     df = Rover.read_csv("examples/example_yosemite_temps.csv")
-    # bug with Numo - https://github.com/ruby-numo/numo-narray/issues/162
-    # df["y"][df["y"] == "NaN"] = nil
-    df["y"] = df["y"].map { |v| v == "NaN" ? nil : v }
+    df["y"][df["y"] == "NaN"] = nil
 
     m = Prophet.new(changepoint_prior_scale: 0.01)
     m.fit(df, seed: 123)
