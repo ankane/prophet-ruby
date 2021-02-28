@@ -5,7 +5,7 @@ gemspec
 gem "rake"
 gem "minitest", ">= 5"
 gem "daru"
-gem "matplotlib"
+gem "matplotlib", require: false # for ci
 gem "activesupport"
 gem "tzinfo-data"
 
