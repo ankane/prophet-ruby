@@ -65,6 +65,33 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "logistic")
   end
 
+  def test_flat
+    df = load_example
+
+    m = Prophet.new(growth: "flat")
+    m.fit(df, seed: 123)
+
+    if mac?
+      assert_in_delta 7494.87, m.params["lp__"][0], 1
+      assert_in_delta 0, m.params["k"][0], 0.01
+      assert_in_delta 0.63273591, m.params["m"][0]
+    end
+
+    future = m.make_future_dataframe(periods: 365)
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], future["ds"].tail(2)
+
+    forecast = m.predict(future)
+    assert_times ["2017-01-18 00:00:00 UTC", "2017-01-19 00:00:00 UTC"], forecast["ds"].tail(2)
+    assert_elements_in_delta [9.086030, 9.103180], forecast["yhat"].tail(2)
+    assert_elements_in_delta [8.285740, 8.416043], forecast["yhat_lower"].tail(2)
+    assert_elements_in_delta [9.859524, 9.877022], forecast["yhat_upper"].tail(2)
+
+    future = m.make_future_dataframe(periods: 365, include_history: false)
+    assert_times ["2016-01-21 00:00:00 UTC", "2016-01-22 00:00:00 UTC"], future["ds"].head(2)
+
+    plot(m, forecast, "flat")
+  end
+
   def test_changepoints
     df = load_example
 

@@ -1,3 +1,7 @@
+## 0.2.4 (unreleased)
+
+- Added support for flat growth
+
 ## 0.2.3 (2020-10-14)
 
 - Added support for times to `forecast` method

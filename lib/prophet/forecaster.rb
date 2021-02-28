@@ -75,8 +75,8 @@ module Prophet
     end
 
     def validate_inputs
-      if !["linear", "logistic"].include?(@growth)
-        raise ArgumentError, "Parameter \"growth\" should be \"linear\" or \"logistic\"."
+      if !["linear", "logistic", "flat"].include?(@growth)
+        raise ArgumentError, "Parameter \"growth\" should be \"linear\", \"logistic\", or \"flat\"."
       end
       if @changepoint_range < 0 || @changepoint_range > 1
         raise ArgumentError, "Parameter \"changepoint_range\" must be in [0, 1]"
@@ -602,6 +602,12 @@ module Prophet
       [k, m]
     end
 
+    def flat_growth_init(df)
+      k = 0
+      m = df["y_scaled"].mean
+      [k, m]
+    end
+
     def fit(df, **kwargs)
       raise Error, "Prophet object can only be fit once" if @history
 
@@ -624,6 +630,8 @@ module Prophet
 
       set_changepoints
 
+      trend_indicator = {"linear" => 0, "logistic" => 1, "flat" => 2}
+
       dat = {
         "T" => history.shape[0],
         "K" => seasonal_features.shape[1],
@@ -634,7 +642,7 @@ module Prophet
         "X" => seasonal_features,
         "sigmas" => prior_scales,
         "tau" => @changepoint_prior_scale,
-        "trend_indicator" => @growth == "logistic" ? 1 : 0,
+        "trend_indicator" => trend_indicator[@growth],
         "s_a" => component_cols["additive_terms"],
         "s_m" => component_cols["multiplicative_terms"]
       }
@@ -642,6 +650,9 @@ module Prophet
       if @growth == "linear"
         dat["cap"] = Numo::DFloat.zeros(@history.shape[0])
         kinit = linear_growth_init(history)
+      elsif @growth == "flat"
+        dat["cap"] = Numo::DFloat.zeros(@history.shape[0])
+        kinit = flat_growth_init(history)
       else
         dat["cap"] = history["cap_scaled"]
         kinit = logistic_growth_init(history)
@@ -655,7 +666,7 @@ module Prophet
         "sigma_obs" => 1
       }
 
-      if history["y"].min == history["y"].max && @growth == "linear"
+      if history["y"].min == history["y"].max && (@growth == "linear" || @growth == "flat")
         # Nothing to fit.
         @params = stan_init
         @params["sigma_obs"] = 1e-9
@@ -741,6 +752,11 @@ module Prophet
       cap.to_numo / (1 + Numo::NMath.exp(-k_t * (t - m_t)))
     end
 
+    def flat_trend(t, m)
+      m_t = m * t.new_ones
+      m_t
+    end
+
     def predict_trend(df)
       k = @params["k"].mean(nan: true)
       m = @params["m"].mean(nan: true)
@@ -749,9 +765,11 @@ module Prophet
       t = Numo::NArray.asarray(df["t"].to_a)
       if @growth == "linear"
         trend = piecewise_linear(t, deltas, k, m, @changepoints_t)
-      else
+      elsif @growth == "logistic"
         cap = df["cap_scaled"]
         trend = piecewise_logistic(t, cap, deltas, k, m, @changepoints_t)
+      elsif @growth == "flat"
+        trend = flat_trend(t, m)
       end
 
       trend * @y_scale + Numo::NArray.asarray(df["floor"].to_a)
@@ -887,9 +905,11 @@ module Prophet
 
       if @growth == "linear"
         trend = piecewise_linear(t, deltas, k, m, changepoint_ts)
-      else
+      elsif @growth == "logistic"
         cap = df["cap_scaled"]
         trend = piecewise_logistic(t, cap, deltas, k, m, changepoint_ts)
+      elsif @growth == "flat"
+        trend = flat_trend(t, m)
       end
 
       trend * @y_scale + Numo::NArray.asarray(df["floor"].to_a)
