@@ -1,4 +1,4 @@
-## 0.2.4 (unreleased)
+## 0.2.4 (2021-04-02)
 
 - Added support for flat growth
 
