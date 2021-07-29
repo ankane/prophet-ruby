@@ -83,4 +83,14 @@ module Prophet
     end
     result.map { |v| [v["ds"], v["yhat"]] }.to_h
   end
+
+  def self.anomalies(series)
+    df = Rover::DataFrame.new(series.map { |k, v| {"ds" => k, "y" => v} })
+    m = Prophet.new(interval_width: 0.99)
+    m.logger.level = ::Logger::FATAL # no logging
+    m.fit(df)
+    forecast = m.predict(df)
+    # filter df["ds"] to ensure dates/times in same format as input
+    df["ds"][(df["y"] < forecast["yhat_lower"]) | (df["y"] > forecast["yhat_upper"])].to_a
+  end
 end

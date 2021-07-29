@@ -48,6 +48,12 @@ series = User.group_by_day(:created_at).count
 Prophet.forecast(series)
 ```
 
+Detect anomalies in a time series
+
+```ruby
+Prophet.anomalies(series)
+```
+
 ## Advanced API
 
 Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Rover](https://github.com/ankane/rover) for data frames.

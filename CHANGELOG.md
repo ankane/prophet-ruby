@@ -1,3 +1,7 @@
+## 0.2.5 (unreleased)
+
+- Added `anomalies` method
+
 ## 0.2.4 (2021-04-02)
 
 - Added support for flat growth
