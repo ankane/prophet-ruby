@@ -1,4 +1,4 @@
-## 0.2.5 (unreleased)
+## 0.2.5 (2021-07-28)
 
 - Added `anomalies` method
 
