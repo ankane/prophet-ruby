@@ -143,7 +143,7 @@ module Prophet
     def setup_dataframe(df, initialize_scales: false)
       if df.include?("y")
         df["y"] = df["y"].map(&:to_f)
-        raise ArgumentError "Found infinity in column y." unless df["y"].all?(&:finite?)
+        raise ArgumentError, "Found infinity in column y." unless df["y"].all?(&:finite?)
       end
       # TODO support integers
 
