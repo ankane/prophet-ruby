@@ -246,6 +246,16 @@ class ProphetTest < Minitest::Test
     assert_times ["2016-01-21 00:00:00 UTC", "2016-01-22 00:00:00 UTC"], future["ds"].head(2)
   end
 
+  def test_infinity
+    df = load_example
+    df["y"][0] = Float::INFINITY
+    m = Prophet.new
+    error = assert_raises(ArgumentError) do
+      m.fit(df)
+    end
+    assert_equal "Found infinity in column y.", error.message
+  end
+
   private
 
   def load_example
