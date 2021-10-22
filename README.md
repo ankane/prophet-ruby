@@ -10,7 +10,7 @@ Supports:
 
 And gracefully handles missing data
 
-[![Build Status](https://github.com/ankane/prophet/workflows/build/badge.svg?branch=master)](https://github.com/ankane/prophet/actions)
+[![Build Status](https://github.com/ankane/prophet-ruby/workflows/build/badge.svg?branch=master)](https://github.com/ankane/prophet-ruby/actions)
 
 ## Installation
 
@@ -295,22 +295,22 @@ This library was ported from the [Prophet Python library](https://github.com/fac
 
 ## History
 
-View the [changelog](https://github.com/ankane/prophet/blob/master/CHANGELOG.md)
+View the [changelog](https://github.com/ankane/prophet-ruby/blob/master/CHANGELOG.md)
 
 ## Contributing
 
 Everyone is encouraged to help improve this project. Here are a few ways you can help:
 
-- [Report bugs](https://github.com/ankane/prophet/issues)
-- Fix bugs and [submit pull requests](https://github.com/ankane/prophet/pulls)
+- [Report bugs](https://github.com/ankane/prophet-ruby/issues)
+- Fix bugs and [submit pull requests](https://github.com/ankane/prophet-ruby/pulls)
 - Write, clarify, or fix documentation
 - Suggest or add new features
 
 To get started with development:
 
 ```sh
-git clone https://github.com/ankane/prophet.git
-cd prophet
+git clone https://github.com/ankane/prophet-ruby.git
+cd prophet-ruby
 bundle install
 bundle exec ruby ext/prophet/extconf.rb
 bundle exec rake test

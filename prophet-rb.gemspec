@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.name          = "prophet-rb"
   spec.version       = Prophet::VERSION
   spec.summary       = "Time series forecasting for Ruby"
-  spec.homepage      = "https://github.com/ankane/prophet"
+  spec.homepage      = "https://github.com/ankane/prophet-ruby"
   spec.license       = "MIT"
 
   spec.author        = "Andrew Kane"
