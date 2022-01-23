@@ -17,7 +17,7 @@ And gracefully handles missing data
 Add this line to your application’s Gemfile:
 
 ```ruby
-gem 'prophet-rb'
+gem "prophet-rb"
 ```
 
 ## Simple API
