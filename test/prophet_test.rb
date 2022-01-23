@@ -263,8 +263,6 @@ class ProphetTest < Minitest::Test
   end
 
   def plot(m, forecast, name)
-    return if ci?
-
     fig = m.plot(forecast)
     fig.savefig("/tmp/#{name}.png")
     m.add_changepoints_to_plot(fig.gca, forecast)
@@ -274,9 +272,5 @@ class ProphetTest < Minitest::Test
 
   def mac?
     RbConfig::CONFIG["host_os"] =~ /darwin/i
-  end
-
-  def ci?
-    ENV["CI"]
   end
 end
