@@ -106,6 +106,7 @@ class ForecastTest < Minitest::Test
   end
 
   def test_hourly_active_support
+    require "active_support"
     require "active_support/time"
 
     series = {}
