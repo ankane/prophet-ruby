@@ -32,13 +32,13 @@ end
 
 namespace :vendor do
   task :linux do
-    download_file("prophet-linux.zip", "f203dfcb9849aee40a5ab4fa320523843f699ebd62f4b1bd3343f59cb8d6c47a")
-    download_file("prophet-linux-arm.zip", "67f8775e6d9e71476f86d6a3b41b4f93bf9d5e5f7c21e157cd791d0e48cec58b")
+    download_file("prophet-linux.zip", "38cd783382dd3464500a9579b21d9974b892124e3305816573a647700df9d7a8")
+    download_file("prophet-linux-arm.zip", "ab94b20e344d205efe3154362192640e51855fcc03014c9287330c563cf5ab97")
   end
 
   task :mac do
-    download_file("prophet-mac.zip", "d6b9189b1e9292ad30e8ecf2e03c21222a0888dad4c8d9153e9219d9706b5686")
-    download_file("prophet-mac-arm.zip", "d14162da3aa684bc55d88796a94774c3648b17dbe7dc9a88b1cde607d511a5db")
+    download_file("prophet-mac.zip", "09ec8791a54c9b1f4275107831ad3f4fb9f77e69f7a185ec903fdb0f8b844920")
+    download_file("prophet-mac-arm.zip", "0b1039c7e557053a900217430d39d09df2769105e397b71ec985daec361249cd")
   end
 
   task :windows do
