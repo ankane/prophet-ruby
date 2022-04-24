@@ -112,7 +112,7 @@ class ProphetTest < Minitest::Test
 
     if mac?
       assert_in_delta 8040.81, m.params["lp__"][0], 1
-      assert_in_delta -0.36428, m.params["k"][0], 0.01
+      assert_in_delta -0.36428, m.params["k"][0], 0.02
       assert_in_delta 0.626888, m.params["m"][0]
     end
 
@@ -205,7 +205,7 @@ class ProphetTest < Minitest::Test
     assert_times ["2017-07-17 11:00:00 UTC", "2017-07-17 12:00:00 UTC"], future["ds"].tail(2)
 
     forecast = m.predict(future)
-    assert_elements_in_delta [7.755761, 7.388094], forecast["yhat"].tail(2), 1
+    assert_elements_in_delta [7.755761, 7.388094], forecast["yhat"].tail(2), 2
     assert_elements_in_delta [-8.481951, -8.933871], forecast["yhat_lower"].tail(2), 5
     assert_elements_in_delta [22.990261, 23.190911], forecast["yhat_upper"].tail(2), 5
 
