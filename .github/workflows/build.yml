@@ -5,7 +5,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest] # TODO add windows-latest
+        include:
+        - ruby: 3.1
+          os: ubuntu-20.04
+        - ruby: "3.0"
+          os: ubuntu-18.04
+        - ruby: 2.7
+          os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -13,7 +19,7 @@ jobs:
     - run: pip install matplotlib
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1
+        ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-    - run: bundle exec ruby ext/prophet/extconf.rb
+    - run: bundle exec rake vendor:platform
     - run: bundle exec rake test

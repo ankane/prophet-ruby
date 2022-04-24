@@ -6,7 +6,8 @@ module Prophet
     end
 
     def load_model
-      model_file = File.expand_path("../../stan_model/prophet_model.bin", __dir__)
+      model_file = File.expand_path("../../vendor/prophet-#{platform}/bin/prophet", __dir__)
+      raise Error, "Platform not supported yet" unless File.exist?(model_file)
       CmdStan::Model.new(exe_file: model_file)
     end
 
@@ -131,6 +132,24 @@ module Prophet
       stan_init["delta"] = stan_init["delta"].to_a
       stan_init["beta"] = stan_init["beta"].to_a
       [stan_init, stan_data]
+    end
+
+    def platform
+      if Gem.win_platform?
+        "windows"
+      elsif RbConfig::CONFIG["host_os"] =~ /darwin/i
+        if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+          "mac-arm"
+        else
+          "mac"
+        end
+      else
+        if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+          "linux-arm"
+        else
+          "linux"
+        end
+      end
     end
   end
 end

@@ -312,6 +312,6 @@ To get started with development:
 git clone https://github.com/ankane/prophet-ruby.git
 cd prophet-ruby
 bundle install
-bundle exec ruby ext/prophet/extconf.rb
+bundle exec rake vendor:all
 bundle exec rake test
 ```

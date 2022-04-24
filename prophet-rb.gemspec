@@ -10,13 +10,12 @@ Gem::Specification.new do |spec|
   spec.author        = "Andrew Kane"
   spec.email         = "andrew@ankane.org"
 
-  spec.files         = Dir["*.{md,txt}", "{data-raw,ext,lib,stan}/**/*"]
+  spec.files         = Dir["*.{md,txt}", "{data-raw,lib,stan,vendor}/**/*"]
   spec.require_path  = "lib"
-  spec.extensions    = ["ext/prophet/extconf.rb"]
 
   spec.required_ruby_version = ">= 2.7"
 
-  spec.add_dependency "cmdstan", ">= 0.1.2"
+  spec.add_dependency "cmdstan", ">= 0.2"
   spec.add_dependency "numo-narray", ">= 0.9.1.7" # for percentile
   spec.add_dependency "rover-df"
 end
