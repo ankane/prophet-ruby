@@ -1,4 +1,4 @@
-## 0.3.0 (unreleased)
+## 0.3.0 (2021-04-24)
 
 - Switched to precompiled models
 - Dropped support for Ruby < 2.7
