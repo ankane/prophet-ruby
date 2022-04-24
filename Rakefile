@@ -19,6 +19,29 @@ end
 
 Rake::Task["build"].enhance [:ensure_vendor]
 
+platforms = ["x86_64-linux", "aarch64-linux", "x86_64-darwin", "arm64-darwin"]
+
+task :build_platform do
+  require "fileutils"
+
+  platforms.each do |platform|
+    sh "gem", "build", "--platform", platform
+  end
+
+  FileUtils.mkdir_p("pkg")
+  Dir["*.gem"].each do |file|
+    FileUtils.move(file, "pkg")
+  end
+end
+
+task :release_platform do
+  require_relative "lib/prophet/version"
+
+  Dir["pkg/prophet-rb-#{Prophet::VERSION}-*.gem"].each do |file|
+    sh "gem", "push", file
+  end
+end
+
 def download_file(file, sha256)
   require "fileutils"
   require "open-uri"

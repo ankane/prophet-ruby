@@ -10,8 +10,21 @@ Gem::Specification.new do |spec|
   spec.author        = "Andrew Kane"
   spec.email         = "andrew@ankane.org"
 
-  spec.files         = Dir["*.{md,txt}", "{data-raw,lib,stan,vendor}/**/*"]
+  spec.files         = Dir["*.{md,txt}", "{data-raw,lib,stan}/**/*"]
   spec.require_path  = "lib"
+
+  case spec.platform.to_s
+  when "x86_64-linux"
+    spec.files.concat(Dir["vendor/prophet-linux/**/*"])
+  when "aarch64-linux"
+    spec.files.concat(Dir["vendor/prophet-linux-arm/**/*"])
+  when "x86_64-darwin"
+    spec.files.concat(Dir["vendor/prophet-mac/**/*"])
+  when "arm64-darwin"
+    spec.files.concat(Dir["vendor/prophet-mac-arm/**/*"])
+  else
+    spec.files.concat(Dir["vendor/**/*"])
+  end
 
   spec.required_ruby_version = ">= 2.7"
 
