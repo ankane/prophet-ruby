@@ -24,8 +24,9 @@ def download_file(file, sha256)
     File.binwrite(file, contents)
     dest = File.expand_path("vendor/#{file[0..-5]}", __dir__)
     FileUtils.rm_r(dest) if Dir.exist?(dest)
-    system "unzip", "-q", file, "-d", dest
-    system "chmod", "+x", "#{dest}/bin/prophet"
+    # run apt install unzip on Linux
+    system "unzip", "-q", file, "-d", dest, exception: true
+    system "chmod", "+x", "#{dest}/bin/prophet", exception: true
   end
 end
 
