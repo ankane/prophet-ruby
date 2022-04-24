@@ -8,6 +8,17 @@ Rake::TestTask.new do |t|
   t.warning = false # for daru
 end
 
+directories = %w(prophet-linux prophet-linux-arm prophet-mac prophet-mac-arm)
+
+# ensure vendor files exist
+task :ensure_vendor do
+  directories.each do |dir|
+    raise "Missing directory: #{dir}" unless Dir.exist?("vendor/#{dir}")
+  end
+end
+
+Rake::Task["build"].enhance [:ensure_vendor]
+
 def download_file(file, sha256)
   require "fileutils"
   require "open-uri"
