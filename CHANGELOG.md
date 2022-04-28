@@ -1,4 +1,4 @@
-## 0.3.1 (unreleased)
+## 0.3.1 (2021-04-28)
 
 - Improved error message for missing columns
 
