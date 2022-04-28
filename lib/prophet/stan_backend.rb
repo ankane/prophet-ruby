@@ -6,7 +6,7 @@ module Prophet
     end
 
     def load_model
-      model_file = File.expand_path("../../vendor/prophet-#{platform}/bin/prophet", __dir__)
+      model_file = File.expand_path("../../vendor/#{platform}/bin/prophet", __dir__)
       raise Error, "Platform not supported yet" unless File.exist?(model_file)
       CmdStan::Model.new(exe_file: model_file)
     end
@@ -139,15 +139,15 @@ module Prophet
         "windows"
       elsif RbConfig::CONFIG["host_os"] =~ /darwin/i
         if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
-          "mac-arm"
+          "arm64-darwin"
         else
-          "mac"
+          "x86_64-darwin"
         end
       else
         if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
-          "linux-arm"
+          "aarch64-linux"
         else
-          "linux"
+          "x86_64-linux"
         end
       end
     end

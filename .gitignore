@@ -7,4 +7,5 @@
 /spec/reports/
 /tmp/
 *.lock
-/vendor/prophet-*
+/vendor/*-darwin
+/vendor/*-linux
