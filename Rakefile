@@ -8,7 +8,7 @@ Rake::TestTask.new do |t|
   t.warning = false # for daru
 end
 
-directories = %w(prophet-linux prophet-linux-arm prophet-mac prophet-mac-arm)
+directories = %w(x86_64-linux aarch64-linux x86_64-darwin arm64-darwin)
 
 # ensure vendor files exist
 task :ensure_vendor do
@@ -19,12 +19,16 @@ end
 
 Rake::Task["build"].enhance [:ensure_vendor]
 
-def download_file(file, sha256)
+def download_file(target, sha256)
+  version = "1.0"
+
   require "fileutils"
   require "open-uri"
   require "tmpdir"
 
-  url = "https://github.com/ankane/ml-builds/releases/download/prophet-1.0/#{file}"
+  file = "prophet-#{version}-#{target}.zip"
+  # TODO remove revision on next release
+  url = "https://github.com/ankane/ml-builds/releases/download/prophet-#{version}-1/#{file}"
   puts "Downloading #{file}..."
   contents = URI.open(url).read
 
@@ -33,7 +37,7 @@ def download_file(file, sha256)
 
   Dir.chdir(Dir.mktmpdir) do
     File.binwrite(file, contents)
-    dest = File.expand_path("vendor/#{file[0..-5]}", __dir__)
+    dest = File.expand_path("vendor/#{target}", __dir__)
     FileUtils.rm_r(dest) if Dir.exist?(dest)
     # run apt install unzip on Linux
     system "unzip", "-q", file, "-d", dest, exception: true
@@ -43,13 +47,13 @@ end
 
 namespace :vendor do
   task :linux do
-    download_file("prophet-linux.zip", "38cd783382dd3464500a9579b21d9974b892124e3305816573a647700df9d7a8")
-    download_file("prophet-linux-arm.zip", "ab94b20e344d205efe3154362192640e51855fcc03014c9287330c563cf5ab97")
+    download_file("x86_64-linux", "ab2a6e77078c7d5057b58be0b8ac505e7a6523b241b628900b4594f3e4f52792")
+    download_file("aarch64-linux", "b5211439fad89ed6b571c4d4c59c390cba015b8b3585493c6922b62c2cc0d020")
   end
 
   task :mac do
-    download_file("prophet-mac.zip", "09ec8791a54c9b1f4275107831ad3f4fb9f77e69f7a185ec903fdb0f8b844920")
-    download_file("prophet-mac-arm.zip", "0b1039c7e557053a900217430d39d09df2769105e397b71ec985daec361249cd")
+    download_file("x86_64-darwin", "31268095b70aa7c11c291b26ae43d073111c1f0e14309e024d17688782046a9f")
+    download_file("arm64-darwin", "c1ce84c1669b4960da413d45c22b1ee4b757fad36e127a71fe95874c4ea5a490")
   end
 
   task :windows do
