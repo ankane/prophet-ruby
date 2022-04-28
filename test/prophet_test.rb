@@ -256,6 +256,16 @@ class ProphetTest < Minitest::Test
     assert_equal "Found infinity in column y.", error.message
   end
 
+  def test_missing_columns
+    df = load_example
+    df.delete("y")
+    m = Prophet.new
+    error = assert_raises(ArgumentError) do
+      m.fit(df)
+    end
+    assert_equal "Data frame must have ds and y columns", error.message
+  end
+
   private
 
   def load_example

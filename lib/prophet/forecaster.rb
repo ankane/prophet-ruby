@@ -616,6 +616,10 @@ module Prophet
       end
       raise ArgumentError, "Must be a data frame" unless df.is_a?(Rover::DataFrame)
 
+      unless df.include?("ds") && df.include?("y")
+        raise ArgumentError, "Data frame must have ds and y columns"
+      end
+
       history = df[!df["y"].missing]
       raise Error, "Data has less than 2 non-nil rows" if history.size < 2
 

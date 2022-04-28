@@ -1,3 +1,7 @@
+## 0.3.1 (unreleased)
+
+- Improved error message for missing columns
+
 ## 0.3.0 (2021-04-24)
 
 - Switched to precompiled models
