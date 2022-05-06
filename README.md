@@ -22,6 +22,8 @@ gem "prophet-rb"
 
 ## Simple API
 
+### Forecasting
+
 Get future predictions for a time series
 
 ```ruby
@@ -54,10 +56,18 @@ And supports many advanced API options [unreleased]
 Prophet.forecast(series, growth: "logistic", weekly_seasonality: false)
 ```
 
+### Anomaly Detection
+
 Detect anomalies in a time series
 
 ```ruby
 Prophet.anomalies(series)
+```
+
+Specify the uncertainty interval width (decrease for more anomalies) [unreleased]
+
+```ruby
+Prophet.anomalies(series, interval_width: 0.99)
 ```
 
 ## Advanced API

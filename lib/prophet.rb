@@ -101,9 +101,10 @@ module Prophet
     result.map { |v| [v["ds"], v["yhat"]] }.to_h
   end
 
-  def self.anomalies(series)
+  # TODO better name for interval_width
+  def self.anomalies(series, interval_width: 0.99)
     df = Rover::DataFrame.new(series.map { |k, v| {"ds" => k, "y" => v} })
-    m = Prophet.new(interval_width: 0.99)
+    m = Prophet.new(interval_width: interval_width)
     m.logger.level = ::Logger::FATAL # no logging
     m.fit(df)
     forecast = m.predict(df)
