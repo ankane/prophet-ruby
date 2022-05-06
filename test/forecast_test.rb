@@ -169,6 +169,13 @@ class ForecastTest < Minitest::Test
     assert_equal "Series must have at least 10 data points", error.message
   end
 
+  def test_unknown_keyword
+    error = assert_raises(ArgumentError) do
+      Prophet.forecast(generate_series, a: true)
+    end
+    assert_equal "unknown keywords: :a", error.message
+  end
+
   private
 
   def generate_series

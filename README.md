@@ -48,6 +48,12 @@ series = User.group_by_day(:created_at).count
 Prophet.forecast(series)
 ```
 
+And supports many advanced API options [unreleased]
+
+```ruby
+Prophet.forecast(series, growth: "logistic", weekly_seasonality: false)
+```
+
 Detect anomalies in a time series
 
 ```ruby

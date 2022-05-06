@@ -1,3 +1,7 @@
+## 0.3.2 (unreleased)
+
+- Added advanced API options to `forecast` method
+
 ## 0.3.1 (2021-04-28)
 
 - Improved error message for missing columns
