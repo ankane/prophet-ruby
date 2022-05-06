@@ -136,17 +136,19 @@ class ForecastTest < Minitest::Test
   end
 
   def test_count
-    series = {}
-    date = Date.parse("2018-04-01")
-    31.times do
-      series[date] = date.wday
-      date += 1
-    end
-
+    series = generate_series
     expected = series.to_a.last(3).to_h
     predicted = Prophet.forecast(series.first(28).to_h, count: 3)
     assert_equal expected.keys, predicted.keys
     assert_elements_in_delta expected.values, predicted.values
+  end
+
+  # TODO improve test
+  # TODO debug performance
+  def test_country_holidays
+    series = generate_series
+    Prophet.forecast(series, country_holidays: "US")
+    Prophet.forecast(series, country_holidays: ["Mexico", "Canada"])
   end
 
   def test_bad_key
@@ -165,5 +167,17 @@ class ForecastTest < Minitest::Test
       Prophet.forecast({})
     end
     assert_equal "Series must have at least 10 data points", error.message
+  end
+
+  private
+
+  def generate_series
+    series = {}
+    date = Date.parse("2018-04-01")
+    31.times do
+      series[date] = date.wday
+      date += 1
+    end
+    series
   end
 end

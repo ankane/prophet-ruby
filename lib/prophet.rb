@@ -21,7 +21,7 @@ module Prophet
     Forecaster.new(**kwargs)
   end
 
-  def self.forecast(series, count: 10)
+  def self.forecast(series, count: 10, country_holidays: nil)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
     # check type to determine output format
@@ -65,6 +65,13 @@ module Prophet
 
     m = Prophet.new
     m.logger.level = ::Logger::FATAL # no logging
+
+    if country_holidays
+      Array(country_holidays).each do |country_name|
+        m.add_country_holidays(country_name: country_name)
+      end
+    end
+
     m.fit(df)
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
