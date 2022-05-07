@@ -24,15 +24,8 @@ module Prophet
   def self.forecast(series, count: 10, country_holidays: nil, **options)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
-    allowed_options = Set.new([
-      :growth, :changepoints, :n_changepoints, :changepoint_range,
-      :yearly_seasonality, :weekly_seasonality, :daily_seasonality, :seasonality_mode,
-      :seasonality_prior_scale, :holidays_prior_scale, :changepoint_prior_scale
-    ])
-    unknown_options = options.reject { |k, _| allowed_options.include?(k) }.keys
-    if unknown_options.any?
-      raise ArgumentError, "unknown keywords: #{unknown_options.map(&:inspect).join(", ")}"
-    end
+    # error early on unknown keywords
+    m = Prophet.new(**options)
 
     # check type to determine output format
     # check for before converting to time
@@ -73,7 +66,6 @@ module Prophet
     # use series, not times, so dates are handled correctly
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
 
-    m = Prophet.new(**options)
     m.logger.level = ::Logger::FATAL # no logging
 
     if country_holidays

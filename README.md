@@ -50,7 +50,7 @@ series = User.group_by_day(:created_at).count
 Prophet.forecast(series)
 ```
 
-And supports many advanced API options [unreleased]
+And supports advanced API options [unreleased]
 
 ```ruby
 Prophet.forecast(series, growth: "logistic", weekly_seasonality: false)
@@ -64,7 +64,7 @@ Detect anomalies in a time series
 Prophet.anomalies(series)
 ```
 
-Specify the uncertainty interval width (decrease for more anomalies) [unreleased]
+Specify the width of uncertainty intervals (decrease for more anomalies) [unreleased]
 
 ```ruby
 Prophet.anomalies(series, interval_width: 0.99)

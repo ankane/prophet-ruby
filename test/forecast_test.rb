@@ -146,6 +146,8 @@ class ForecastTest < Minitest::Test
   # TODO improve test
   # TODO debug performance
   def test_country_holidays
+    skip "Improve performance"
+
     series = generate_series
     Prophet.forecast(series, country_holidays: "US")
     Prophet.forecast(series, country_holidays: ["Mexico", "Canada"])
@@ -173,7 +175,7 @@ class ForecastTest < Minitest::Test
     error = assert_raises(ArgumentError) do
       Prophet.forecast(generate_series, a: true)
     end
-    assert_equal "unknown keywords: :a", error.message
+    assert_equal "unknown keyword: :a", error.message
   end
 
   private
