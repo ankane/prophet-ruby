@@ -21,7 +21,7 @@ module Prophet
     Forecaster.new(**kwargs)
   end
 
-  def self.forecast(series, count: 10, country_holidays: nil, **options)
+  def self.forecast(series, count: 10, country_holidays: nil, cap: nil, **options)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
     # error early on unknown keywords
@@ -65,6 +65,7 @@ module Prophet
 
     # use series, not times, so dates are handled correctly
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
+    df["cap"] = cap if cap
 
     m.logger.level = ::Logger::FATAL # no logging
 
@@ -77,6 +78,7 @@ module Prophet
     m.fit(df)
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
+    future["cap"] = cap if cap
     forecast = m.predict(future)
     result = forecast[["ds", "yhat"]].to_a
 
