@@ -50,7 +50,7 @@ series = User.group_by_day(:created_at).count
 Prophet.forecast(series)
 ```
 
-And supports advanced API options [unreleased]
+And supports [advanced API](#advanced-api) options [unreleased]
 
 ```ruby
 Prophet.forecast(series, growth: "logistic", weekly_seasonality: false)
