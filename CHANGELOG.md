@@ -2,11 +2,11 @@
 
 - Added advanced API options to `forecast` and `anomalies` methods
 
-## 0.3.1 (2021-04-28)
+## 0.3.1 (2022-04-28)
 
 - Improved error message for missing columns
 
-## 0.3.0 (2021-04-24)
+## 0.3.0 (2022-04-24)
 
 - Switched to precompiled models
 - Dropped support for Ruby < 2.7
