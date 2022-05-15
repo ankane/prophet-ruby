@@ -144,10 +144,7 @@ class ForecastTest < Minitest::Test
   end
 
   # TODO improve test
-  # TODO debug performance
   def test_country_holidays
-    skip "Improve performance"
-
     series = generate_series
     Prophet.forecast(series, country_holidays: "US")
   end

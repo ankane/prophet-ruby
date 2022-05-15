@@ -12,15 +12,8 @@ module Prophet
     # TODO marshal on installation
     def holidays_df
       @holidays_df ||= begin
-        holidays = {"ds" => [], "holiday" => [], "country" => [], "year" => []}
         holidays_file = File.expand_path("../../data-raw/generated_holidays.csv", __dir__)
-        CSV.foreach(holidays_file, headers: true, converters: [:date, :numeric]) do |row|
-          holidays["ds"] << row["ds"]
-          holidays["holiday"] << row["holiday"]
-          holidays["country"] << row["country"]
-          holidays["year"] << row["year"]
-        end
-        Rover::DataFrame.new(holidays)
+        Rover.read_csv(holidays_file, converters: [:date, :numeric])
       end
     end
   end

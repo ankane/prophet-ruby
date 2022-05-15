@@ -18,10 +18,7 @@ class AnomaliesTest < Minitest::Test
   end
 
   # TODO improve test
-  # TODO debug performance
   def test_country_holidays
-    skip "Improve performance"
-
     series = generate_series
     Prophet.anomalies(series, country_holidays: "US")
   end
