@@ -150,7 +150,6 @@ class ForecastTest < Minitest::Test
 
     series = generate_series
     Prophet.forecast(series, country_holidays: "US")
-    Prophet.forecast(series, country_holidays: ["Mexico", "Canada"])
   end
 
   # TODO improve test

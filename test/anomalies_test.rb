@@ -17,6 +17,21 @@ class AnomaliesTest < Minitest::Test
     assert_equal [(date - 8).to_time], Prophet.anomalies(series)
   end
 
+  # TODO improve test
+  # TODO debug performance
+  def test_country_holidays
+    skip "Improve performance"
+
+    series = generate_series
+    Prophet.anomalies(series, country_holidays: "US")
+  end
+
+  # TODO improve test
+  def test_cap
+    series = generate_series
+    Prophet.anomalies(series, growth: "logistic", cap: 8.5)
+  end
+
   def test_unknown_keyword
     error = assert_raises(ArgumentError) do
       Prophet.anomalies(generate_series, a: true)

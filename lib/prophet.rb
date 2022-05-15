@@ -68,13 +68,7 @@ module Prophet
     df["cap"] = cap if cap
 
     m.logger.level = ::Logger::FATAL # no logging
-
-    if country_holidays
-      Array(country_holidays).each do |country_name|
-        m.add_country_holidays(country_name: country_name)
-      end
-    end
-
+    m.add_country_holidays(country_name: country_holidays) if country_holidays
     m.fit(df)
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
@@ -96,10 +90,14 @@ module Prophet
   end
 
   # TODO better name for interval_width
-  def self.anomalies(series, interval_width: 0.99, **options)
+  # TODO DRY with forecast method
+  def self.anomalies(series, interval_width: 0.99, country_holidays: nil, cap: nil, **options)
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
+    df["cap"] = cap if cap
+
     m = Prophet.new(interval_width: interval_width, **options)
     m.logger.level = ::Logger::FATAL # no logging
+    m.add_country_holidays(country_name: country_holidays) if country_holidays
     m.fit(df)
     forecast = m.predict(df)
     # filter df["ds"] to ensure dates/times in same format as input
