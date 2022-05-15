@@ -70,6 +70,12 @@ Specify the width of uncertainty intervals (decrease for more anomalies) [unrele
 Prophet.anomalies(series, interval_width: 0.99)
 ```
 
+Also supports [advanced API](#advanced-api) options [unreleased]
+
+```ruby
+Prophet.anomalies(series, growth: "logistic", weekly_seasonality: false)
+```
+
 ## Advanced API
 
 Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Rover](https://github.com/ankane/rover) for data frames.

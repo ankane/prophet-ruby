@@ -1,6 +1,6 @@
 ## 0.3.2 (unreleased)
 
-- Added advanced API options to `forecast` method
+- Added advanced API options to `forecast` and `anomalies` methods
 
 ## 0.3.1 (2021-04-28)
 
