@@ -68,7 +68,7 @@ module Prophet
     df["cap"] = cap if cap
 
     m.logger.level = ::Logger::FATAL # no logging
-    m.add_country_holidays(country_name: country_holidays) if country_holidays
+    m.add_country_holidays(country_holidays) if country_holidays
     m.fit(df)
 
     future = m.make_future_dataframe(periods: count, include_history: false, freq: freq)
@@ -97,7 +97,7 @@ module Prophet
 
     m = Prophet.new(interval_width: interval_width, **options)
     m.logger.level = ::Logger::FATAL # no logging
-    m.add_country_holidays(country_name: country_holidays) if country_holidays
+    m.add_country_holidays(country_holidays) if country_holidays
     m.fit(df)
 
     forecast = m.predict(df)

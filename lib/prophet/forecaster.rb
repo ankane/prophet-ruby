@@ -386,6 +386,12 @@ module Prophet
 
     def add_country_holidays(country_name)
       raise Error, "Country holidays must be added prior to model fitting." if @history
+
+      # Fix for previously documented keyword argument
+      if country_name.is_a?(Hash) && country_name[:country_name]
+        country_name = country_name[:country_name]
+      end
+
       # Validate names.
       get_holiday_names(country_name).each do |name|
         # Allow merging with existing holidays

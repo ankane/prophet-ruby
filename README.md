@@ -228,7 +228,7 @@ Add country-specific holidays
 
 ```ruby
 m = Prophet.new
-m.add_country_holidays(country_name: "US")
+m.add_country_holidays("US")
 m.fit(df)
 ```
 
