@@ -99,6 +99,7 @@ module Prophet
     m.logger.level = ::Logger::FATAL # no logging
     m.add_country_holidays(country_name: country_holidays) if country_holidays
     m.fit(df)
+
     forecast = m.predict(df)
     # filter df["ds"] to ensure dates/times in same format as input
     df["ds"][(df["y"] < forecast["yhat_lower"]) | (df["y"] > forecast["yhat_upper"])].to_a
