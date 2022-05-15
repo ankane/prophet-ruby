@@ -1,4 +1,4 @@
-## 0.3.2 (unreleased)
+## 0.3.2 (2022-05-15)
 
 - Added advanced API options to `forecast` and `anomalies` methods
 
