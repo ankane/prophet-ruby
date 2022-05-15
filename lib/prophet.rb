@@ -21,7 +21,7 @@ module Prophet
     Forecaster.new(**kwargs)
   end
 
-  def self.forecast(series, count: 10, country_holidays: nil, cap: nil, **options)
+  def self.forecast(series, count: 10, country_holidays: nil, cap: nil, verbose: false, **options)
     raise ArgumentError, "Series must have at least 10 data points" if series.size < 10
 
     # error early on unknown keywords
@@ -67,7 +67,7 @@ module Prophet
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
     df["cap"] = cap if cap
 
-    m.logger.level = ::Logger::FATAL # no logging
+    m.logger.level = ::Logger::FATAL unless verbose
     m.add_country_holidays(country_holidays) if country_holidays
     m.fit(df)
 
@@ -91,12 +91,12 @@ module Prophet
 
   # TODO better name for interval_width
   # TODO DRY with forecast method
-  def self.anomalies(series, interval_width: 0.99, country_holidays: nil, cap: nil, **options)
+  def self.anomalies(series, interval_width: 0.99, country_holidays: nil, cap: nil, verbose: false, **options)
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
     df["cap"] = cap if cap
 
     m = Prophet.new(interval_width: interval_width, **options)
-    m.logger.level = ::Logger::FATAL # no logging
+    m.logger.level = ::Logger::FATAL unless verbose
     m.add_country_holidays(country_holidays) if country_holidays
     m.fit(df)
 

@@ -19,14 +19,19 @@ class AnomaliesTest < Minitest::Test
 
   # TODO improve test
   def test_country_holidays
-    series = generate_series
-    Prophet.anomalies(series, country_holidays: "US")
+    Prophet.anomalies(generate_series, country_holidays: "US")
+  end
+
+  # TODO raise error in 0.4.0
+  def test_country_holidays_unsupported
+    assert_output(nil, /Holidays in USA are not currently supported/) do
+      Prophet.anomalies(generate_series, country_holidays: "USA", verbose: true)
+    end
   end
 
   # TODO improve test
   def test_cap
-    series = generate_series
-    Prophet.anomalies(series, growth: "logistic", cap: 8.5)
+    Prophet.anomalies(generate_series, growth: "logistic", cap: 8.5)
   end
 
   def test_unknown_keyword
