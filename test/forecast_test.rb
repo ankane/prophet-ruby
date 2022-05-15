@@ -145,14 +145,12 @@ class ForecastTest < Minitest::Test
 
   # TODO improve test
   def test_country_holidays
-    series = generate_series
-    Prophet.forecast(series, country_holidays: "US")
+    Prophet.forecast(generate_series, country_holidays: "US")
   end
 
   # TODO improve test
   def test_cap
-    series = generate_series
-    Prophet.forecast(series, growth: "logistic", cap: 8.5)
+    Prophet.forecast(generate_series, growth: "logistic", cap: 8.5)
   end
 
   def test_bad_key
