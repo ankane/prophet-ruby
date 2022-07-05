@@ -1,0 +1,13 @@
+platforms:
+  x86_64-linux:
+    url: https://github.com/ankane/ml-builds/releases/download/prophet-1.1/prophet-1.1-x86_64-linux.zip
+    sha256: 4f1307150a3469ebed75eb040dbefb13401462a130923c082080b86e7fde34ca
+  aarch64-linux:
+    url: https://github.com/ankane/ml-builds/releases/download/prophet-1.1/prophet-1.1-aarch64-linux.zip
+    sha256: c57995e4e3a0270a5e4e42cc470dad3a72aa0b8079d1f24074bb265ae5853713
+  x86_64-darwin:
+    url: https://github.com/ankane/ml-builds/releases/download/prophet-1.1/prophet-1.1-x86_64-darwin.zip
+    sha256: c1cc79038da6cd91e8285a9d88026bbdd8a2122f637ac401c6a291d248fe5d9b
+  arm64-darwin:
+    url: https://github.com/ankane/ml-builds/releases/download/prophet-1.1/prophet-1.1-aarch64-darwin.zip
+    sha256: f4af3e6b53311e0c6f311e868014e790029db38885f916ab60b44e6a669e18f9

@@ -8,66 +8,73 @@ Rake::TestTask.new do |t|
   t.warning = false # for daru
 end
 
-directories = %w(x86_64-linux aarch64-linux x86_64-darwin arm64-darwin)
-
 # ensure vendor files exist
 task :ensure_vendor do
-  directories.each do |dir|
-    raise "Missing directory: #{dir}" unless Dir.exist?("vendor/#{dir}")
+  vendor_config.fetch("platforms").each_key do |k|
+    raise "Missing directory: #{k}" unless Dir.exist?("vendor/#{k}")
   end
 end
 
 Rake::Task["build"].enhance [:ensure_vendor]
 
-def download_file(target, sha256)
-  version = "1.0"
-
+def download_platform(platform)
   require "fileutils"
   require "open-uri"
   require "tmpdir"
 
-  file = "prophet-#{version}-#{target}.zip"
-  # TODO remove revision on next release
-  url = "https://github.com/ankane/ml-builds/releases/download/prophet-#{version}-1/#{file}"
-  puts "Downloading #{file}..."
+  config = vendor_config.fetch("platforms").fetch(platform)
+  url = config.fetch("url")
+  sha256 = config.fetch("sha256")
+
+  puts "Downloading #{url}..."
   contents = URI.open(url).read
 
   computed_sha256 = Digest::SHA256.hexdigest(contents)
   raise "Bad hash: #{computed_sha256}" if computed_sha256 != sha256
 
-  Dir.chdir(Dir.mktmpdir) do
-    File.binwrite(file, contents)
-    dest = File.expand_path("vendor/#{target}", __dir__)
-    FileUtils.rm_r(dest) if Dir.exist?(dest)
-    # run apt install unzip on Linux
-    system "unzip", "-q", file, "-d", dest, exception: true
-    system "chmod", "+x", "#{dest}/bin/prophet", exception: true
+  file = Tempfile.new(binmode: true)
+  file.write(contents)
+
+  vendor = File.expand_path("vendor", __dir__)
+  FileUtils.mkdir_p(vendor)
+
+  dest = File.join(vendor, platform)
+  FileUtils.rm_r(dest) if Dir.exist?(dest)
+
+  # run apt install unzip on Linux
+  system "unzip", "-q", file.path, "-d", dest, exception: true
+  system "chmod", "+x", "#{dest}/bin/prophet", exception: true
+end
+
+def vendor_config
+  @vendor_config ||= begin
+    require "yaml"
+    YAML.safe_load_file("vendor.yml")
   end
 end
 
 namespace :vendor do
-  task :linux do
-    download_file("x86_64-linux", "ab2a6e77078c7d5057b58be0b8ac505e7a6523b241b628900b4594f3e4f52792")
-    download_file("aarch64-linux", "b5211439fad89ed6b571c4d4c59c390cba015b8b3585493c6922b62c2cc0d020")
+  task :all do
+    vendor_config.fetch("platforms").each_key do |k|
+      download_platform(k)
+    end
   end
-
-  task :mac do
-    download_file("x86_64-darwin", "31268095b70aa7c11c291b26ae43d073111c1f0e14309e024d17688782046a9f")
-    download_file("arm64-darwin", "c1ce84c1669b4960da413d45c22b1ee4b757fad36e127a71fe95874c4ea5a490")
-  end
-
-  task :windows do
-  end
-
-  task all: [:linux, :mac, :windows]
 
   task :platform do
     if Gem.win_platform?
-      Rake::Task["vendor:windows"].invoke
+      download_platform("x64-mingw")
     elsif RbConfig::CONFIG["host_os"] =~ /darwin/i
-      Rake::Task["vendor:mac"].invoke
+      if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+        download_platform("arm64-darwin")
+      else
+        download_platform("x86_64-darwin")
+      end
     else
-      Rake::Task["vendor:linux"].invoke
+      if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+        download_platform("aarch64-linux")
+      else
+        download_platform("x86_64-linux")
+      end
     end
   end
 end
