@@ -49,7 +49,7 @@ end
 def vendor_config
   @vendor_config ||= begin
     require "yaml"
-    YAML.safe_load_file("vendor.yml")
+    YAML.safe_load(File.read("vendor.yml"))
   end
 end
 
