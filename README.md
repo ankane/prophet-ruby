@@ -298,7 +298,9 @@ future = m.make_future_dataframe(periods: 300, freq: "H")
 forecast = m.predict(future)
 ```
 
-## Saving and Loading Models (unreleased, experimental)
+## Saving Models [unreleased]
+
+[Explanation](https://facebook.github.io/prophet/docs/additional_topics.html#saving-models)
 
 Save a model
 
@@ -311,6 +313,8 @@ Load a model
 ```ruby
 m = Prophet.from_json(File.read("model.json"))
 ```
+
+Uses the same format as Python
 
 ## Resources
 

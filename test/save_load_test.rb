@@ -19,7 +19,7 @@ class SaveLoadTest < Minitest::Test
   end
 
   def test_load_in_python
-    skip #unless ENV["TEST_PYTHON"]
+    skip unless ENV["TEST_PYTHON"]
 
     df = load_example
 

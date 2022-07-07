@@ -1080,10 +1080,28 @@ module Prophet
         else
           # use same format as Pandas
           v = instance_variable_get("@#{attribute}")
+
+          v = v.dup
+          v["ds"] = v["ds"].map { |v| v.iso8601(3) } if v["ds"]
+          v.delete("col")
+
+          fields =
+            v.types.map do |k, t|
+              type =
+                case t
+                when :object
+                  "datetime"
+                when :int64
+                  "integer"
+                else
+                  "number"
+                end
+              {"name" => k, "type" => type}
+            end
+
           d = {
             "schema" => {
-              # TODO map types
-              "fields" => v.types.to_h { |k, v| [k, v] },
+              "fields" => fields,
               "pandas_version" => "0.20.0"
             },
             "data" => v.to_a
