@@ -80,6 +80,16 @@ Prophet.anomalies(series, growth: "logistic", weekly_seasonality: false)
 
 Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Rover](https://github.com/ankane/rover) for data frames.
 
+- [Quick Start](#advanced-quick-start)
+- [Plots](#plots)
+- [Saturating Forecasts](#saturating-forecasts)
+- [Trend Changepoints](#trend-changepoints)
+- [Holidays and Special Events](#holidays-and-special-events)
+- [Multiplicative Seasonality](#multiplicative-seasonality)
+- [Uncertainty Intervals](#uncertainty-intervals)
+- [Non-Daily Data](#non-daily-data)
+- [Saving Models](#saving-models) [unreleased]
+
 ## Advanced Quick Start
 
 [Explanation](https://facebook.github.io/prophet/docs/quick_start.html)
@@ -298,7 +308,7 @@ future = m.make_future_dataframe(periods: 300, freq: "H")
 forecast = m.predict(future)
 ```
 
-## Saving Models [unreleased]
+## Saving Models
 
 [Explanation](https://facebook.github.io/prophet/docs/additional_topics.html#saving-models)
 
