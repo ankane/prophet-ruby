@@ -314,7 +314,7 @@ Load a model
 m = Prophet.from_json(File.read("model.json"))
 ```
 
-Uses the same format as Python
+Uses the same format as Python, so models can be saved and loaded in either language
 
 ## Resources
 
