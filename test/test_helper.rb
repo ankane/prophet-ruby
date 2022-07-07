@@ -19,4 +19,8 @@ class Minitest::Test
   def assert_times(exp, act)
     assert_equal exp, act.map(&:to_s).to_a
   end
+
+  def load_example
+    Rover.read_csv("examples/example_wp_log_peyton_manning.csv")
+  end
 end

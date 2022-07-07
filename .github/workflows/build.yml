@@ -16,10 +16,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
-    - run: pip install matplotlib
+    - run: pip install matplotlib prophet
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
     - run: bundle exec rake vendor:platform
-    - run: bundle exec rake test
+    - run: TEST_PYTHON=1 bundle exec rake test
