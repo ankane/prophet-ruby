@@ -1,5 +1,5 @@
 import pandas as pd
-from fbprophet import Prophet
+from prophet import Prophet
 
 # float_precision='high' required for pd.read_csv to match precision of Rover.read_csv
 df = pd.read_csv('examples/example_yosemite_temps.csv', float_precision='high')
