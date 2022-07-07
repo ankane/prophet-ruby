@@ -1,5 +1,6 @@
 ## 0.4.0 (unreleased)
 
+- Added expertimental support for saving and loading models
 - Updated holidays
 
 ## 0.3.2 (2022-05-15)

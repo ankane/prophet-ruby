@@ -298,6 +298,20 @@ future = m.make_future_dataframe(periods: 300, freq: "H")
 forecast = m.predict(future)
 ```
 
+## Saving and Loading Models (unreleased, experimental)
+
+Save a model
+
+```ruby
+File.write("model.json", m.to_json)
+```
+
+Load a model
+
+```ruby
+m = Prophet.from_json(File.read("model.json"))
+```
+
 ## Resources
 
 - [Forecasting at Scale](https://peerj.com/preprints/3190.pdf)

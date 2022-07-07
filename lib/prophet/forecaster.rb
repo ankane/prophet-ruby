@@ -971,6 +971,12 @@ module Prophet
       Rover::DataFrame.new({"ds" => dates})
     end
 
+    def to_json
+      require "json"
+
+      JSON.generate(as_json)
+    end
+
     private
 
     # Time is preferred over DateTime in Ruby docs
@@ -1016,6 +1022,172 @@ module Prophet
     def laplace(loc, scale, size)
       u = Numo::DFloat.new(size).rand(-0.5, 0.5)
       loc - scale * u.sign * Numo::NMath.log(1 - 2 * u.abs)
+    end
+
+    SIMPLE_ATTRIBUTES = [
+      "growth", "n_changepoints", "specified_changepoints", "changepoint_range",
+      "yearly_seasonality", "weekly_seasonality", "daily_seasonality",
+      "seasonality_mode", "seasonality_prior_scale", "changepoint_prior_scale",
+      "holidays_prior_scale", "mcmc_samples", "interval_width", "uncertainty_samples",
+      "y_scale", "logistic_floor", "country_holidays", "component_modes"
+    ]
+
+    PD_SERIES = ["changepoints", "history_dates", "train_holiday_names"]
+
+    PD_TIMESTAMP = ["start"]
+
+    PD_TIMEDELTA = ["t_scale"]
+
+    PD_DATAFRAME = ["holidays", "history", "train_component_cols"]
+
+    NP_ARRAY = ["changepoints_t"]
+
+    ORDEREDDICT = ["seasonalities", "extra_regressors"]
+
+    def as_json
+      if @history.nil?
+        raise Error, "This can only be used to serialize models that have already been fit."
+      end
+
+      model_dict =
+        SIMPLE_ATTRIBUTES.to_h do |attribute|
+          [attribute, instance_variable_get("@#{attribute}")]
+        end
+
+      # Handle attributes of non-core types
+      PD_SERIES.each do |attribute|
+        if instance_variable_get("@#{attribute}").nil?
+          model_dict[attribute] = nil
+        else
+          v = instance_variable_get("@#{attribute}")
+          d = {
+            "name" => "ds",
+            "index" => v.size.times.to_a,
+            "data" => v.to_a.map { |v| v.iso8601(3) }
+          }
+          model_dict[attribute] = JSON.generate(d)
+        end
+      end
+      PD_TIMESTAMP.each do |attribute|
+        model_dict[attribute] = instance_variable_get("@#{attribute}").to_f
+      end
+      PD_TIMEDELTA.each do |attribute|
+        model_dict[attribute] = instance_variable_get("@#{attribute}").to_f
+      end
+      PD_DATAFRAME.each do |attribute|
+        if instance_variable_get("@#{attribute}").nil?
+          model_dict[attribute] = nil
+        else
+          # use same format as Pandas
+          v = instance_variable_get("@#{attribute}")
+          d = {
+            "schema" => {
+              # TODO map types
+              "fields" => v.types.to_h { |k, v| [k, v] },
+              "pandas_version" => "0.20.0"
+            },
+            "data" => v.to_a
+          }
+          model_dict[attribute] = JSON.generate(d)
+        end
+      end
+      NP_ARRAY.each do |attribute|
+        model_dict[attribute] = instance_variable_get("@#{attribute}").to_a
+      end
+      ORDEREDDICT.each do |attribute|
+        model_dict[attribute] = [
+          instance_variable_get("@#{attribute}").keys,
+          instance_variable_get("@#{attribute}").transform_keys(&:to_s)
+        ]
+      end
+      # Other attributes with special handling
+      # fit_kwargs -> Transform any numpy types before serializing.
+      # They do not need to be transformed back on deserializing.
+      # TODO deep copy
+      fit_kwargs = @fit_kwargs.to_h { |k, v| [k.to_s, v.dup] }
+      if fit_kwargs.key?("init")
+        fit_kwargs["init"].each do |k, v|
+          if v.is_a?(Numo::NArray)
+            fit_kwargs["init"][k] = v.to_a
+          # elsif v.is_a?(Float)
+          #   fit_kwargs["init"][k] = v.to_f
+          end
+        end
+      end
+      model_dict["fit_kwargs"] = fit_kwargs
+
+      # Params (Dict[str, np.ndarray])
+      model_dict["params"] = params.transform_values(&:to_a)
+      # Attributes that are skipped: stan_fit, stan_backend
+      # Returns 1.0 for Prophet 1.1
+      model_dict["__prophet_version"] = "1.0"
+      model_dict
+    end
+
+    def self.from_json(model_json)
+      require "json"
+
+      model_dict = JSON.parse(model_json)
+
+      # We will overwrite all attributes set in init anyway
+      model = Prophet.new
+      # Simple types
+      SIMPLE_ATTRIBUTES.each do |attribute|
+        model.instance_variable_set("@#{attribute}", model_dict.fetch(attribute))
+      end
+      PD_SERIES.each do |attribute|
+        if model_dict[attribute].nil?
+          model.instance_variable_set("@#{attribute}", nil)
+        else
+          d = JSON.parse(model_dict.fetch(attribute))
+          s = Rover::Vector.new(d["data"])
+          if d["name"] == "ds"
+            s = s.map { |v| Time.parse(v).utc }
+          end
+          model.instance_variable_set("@#{attribute}", s)
+        end
+      end
+      PD_TIMESTAMP.each do |attribute|
+        model.instance_variable_set("@#{attribute}", Time.at(model_dict.fetch(attribute)))
+      end
+      PD_TIMEDELTA.each do |attribute|
+        model.instance_variable_set("@#{attribute}", model_dict.fetch(attribute).to_f)
+      end
+      PD_DATAFRAME.each do |attribute|
+        if model_dict[attribute].nil?
+          model.instance_variable_set("@#{attribute}", nil)
+        else
+          d = JSON.parse(model_dict.fetch(attribute))
+          df = Rover::DataFrame.new(d["data"])
+          df["ds"] = df["ds"].map { |v| Time.parse(v).utc } if df["ds"]
+          if attribute == "train_component_cols"
+            # Special handling because of named index column
+            # df.columns.name = 'component'
+            # df.index.name = 'col'
+          end
+          model.instance_variable_set("@#{attribute}", df)
+        end
+      end
+      NP_ARRAY.each do |attribute|
+        model.instance_variable_set("@#{attribute}", Numo::NArray.cast(model_dict.fetch(attribute)))
+      end
+      ORDEREDDICT.each do |attribute|
+        key_list, unordered_dict = model_dict.fetch(attribute)
+        od = {}
+        key_list.each do |key|
+          od[key] = unordered_dict[key].transform_keys(&:to_sym)
+        end
+        model.instance_variable_set("@#{attribute}", od)
+      end
+      # Other attributes with special handling
+      # fit_kwargs
+      model.instance_variable_set(:@fit_kwargs, model_dict["fit_kwargs"].transform_keys(&:to_sym))
+      # Params (Dict[str, np.ndarray])
+      model.instance_variable_set(:@params, model_dict["params"].transform_values { |v| Numo::NArray.cast(v) })
+      # Skipped attributes
+      # model.stan_backend = nil
+      model.instance_variable_set(:@stan_fit, nil)
+      model
     end
   end
 end

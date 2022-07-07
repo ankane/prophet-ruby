@@ -104,4 +104,8 @@ module Prophet
     # filter df["ds"] to ensure dates/times in same format as input
     df["ds"][(df["y"] < forecast["yhat_lower"]) | (df["y"] > forecast["yhat_upper"])].to_a
   end
+
+  def self.from_json(model_json)
+    Forecaster.from_json(model_json)
+  end
 end
