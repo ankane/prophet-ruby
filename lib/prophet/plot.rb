@@ -111,6 +111,61 @@ module Prophet
       artists
     end
 
+    def self.plot_cross_validation_metric(df_cv, metric:, rolling_window: 0.1, ax: nil, figsize: [10, 6], color: "b", point_color: "gray")
+      if ax.nil?
+        fig = plt.figure(facecolor: "w", figsize: figsize)
+        ax = fig.add_subplot(111)
+      else
+        fig = ax.get_figure
+      end
+      # Get the metric at the level of individual predictions, and with the rolling window.
+      df_none = Diagnostics.performance_metrics(df_cv, metrics: [metric], rolling_window: -1)
+      df_h = Diagnostics.performance_metrics(df_cv, metrics: [metric], rolling_window: rolling_window)
+
+      # Some work because matplotlib does not handle timedelta
+      # Target ~10 ticks.
+      tick_w = df_none["horizon"].max * 1e9 / 10.0
+      # Find the largest time resolution that has <1 unit per bin.
+      dts = ["D", "h", "m", "s", "ms", "us", "ns"]
+      dt_names = ["days", "hours", "minutes", "seconds", "milliseconds", "microseconds", "nanoseconds"]
+      dt_conversions = [
+        24 * 60 * 60 * 10 ** 9,
+        60 * 60 * 10 ** 9,
+        60 * 10 ** 9,
+        10 ** 9,
+        10 ** 6,
+        10 ** 3,
+        1.0
+      ]
+      # TODO update
+      i = 0
+      dts.each_with_index do |dt, i|
+        if np.timedelta64(1, dt) < np.timedelta64(tick_w, "ns")
+          break
+        end
+      end
+
+      x_plt = df_none["horizon"] * 1e9 / dt_conversions[i].to_f
+      x_plt_h = df_h["horizon"] * 1e9 / dt_conversions[i].to_f
+
+      ax.plot(x_plt.to_a, df_none[metric].to_a, ".", alpha: 0.1, c: point_color)
+      ax.plot(x_plt_h.to_a, df_h[metric].to_a, "-", c: color)
+      ax.grid(true)
+
+      ax.set_xlabel("Horizon (#{dt_names[i]})")
+      ax.set_ylabel(metric)
+      fig
+    end
+
+    def self.plt
+      begin
+        require "matplotlib/pyplot"
+      rescue LoadError
+        raise Error, "Install the matplotlib gem for plots"
+      end
+      Matplotlib::Pyplot
+    end
+
     private
 
     def plot_forecast_component(fcst, name, ax: nil, uncertainty: true, plot_cap: false, figsize: [10, 6])
@@ -263,12 +318,7 @@ module Prophet
     end
 
     def plt
-      begin
-        require "matplotlib/pyplot"
-      rescue LoadError
-        raise Error, "Install the matplotlib gem for plots"
-      end
-      Matplotlib::Pyplot
+      Plot.plt
     end
 
     def dates

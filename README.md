@@ -332,6 +332,12 @@ Get performance metrics
 df_p = Prophet::Diagnostics.performance_metrics(df_cv)
 ```
 
+Plot cross validation metrics
+
+```ruby
+Prophet::Plot.plot_cross_validation_metric(df_cv, metric: "mape")
+```
+
 ## Saving Models
 
 [Explanation](https://facebook.github.io/prophet/docs/additional_topics.html#saving-models)
