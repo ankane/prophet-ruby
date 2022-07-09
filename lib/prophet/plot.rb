@@ -139,11 +139,11 @@ module Prophet
       ]
       # TODO update
       i = 0
-      dts.each_with_index do |dt, i|
-        if np.timedelta64(1, dt) < np.timedelta64(tick_w, "ns")
-          break
-        end
-      end
+      # dts.each_with_index do |dt, i|
+      #   if np.timedelta64(1, dt) < np.timedelta64(tick_w, "ns")
+      #     break
+      #   end
+      # end
 
       x_plt = df_none["horizon"] * 1e9 / dt_conversions[i].to_f
       x_plt_h = df_h["horizon"] * 1e9 / dt_conversions[i].to_f
