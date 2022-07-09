@@ -33,4 +33,18 @@ class DiagnosticsTest < Minitest::Test
     assert_times ["2013-02-15 00:00:00 UTC"], df_cv2["cutoff"].first
     assert_times ["2014-02-15 00:00:00 UTC"], df_cv2["cutoff"].last
   end
+
+  def test_performance_metrics_invalid
+    error = assert_raises(ArgumentError) do
+      Prophet::Diagnostics.performance_metrics(Rover::DataFrame.new, metrics: ["invalid"])
+    end
+    assert_match "Valid values for metrics are: ", error.message
+  end
+
+  def test_performance_metrics_non_unique
+    error = assert_raises(ArgumentError) do
+      Prophet::Diagnostics.performance_metrics(Rover::DataFrame.new, metrics: ["mse", "mse"])
+    end
+    assert_equal "Input metrics must be a list of unique values", error.message
+  end
 end

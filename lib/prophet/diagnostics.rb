@@ -180,10 +180,10 @@ module Prophet
         metrics.delete("coverage")
       end
       if metrics.uniq.length != metrics.length
-        raise Error, "Input metrics must be a list of unique values"
+        raise ArgumentError, "Input metrics must be a list of unique values"
       end
       if !Set.new(metrics).subset?(Set.new(valid_metrics))
-        raise Error, "Valid values for metrics are: #{valid_metrics}"
+        raise ArgumentError, "Valid values for metrics are: #{valid_metrics}"
       end
       df_m = df.dup
       if monthly
