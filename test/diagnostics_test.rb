@@ -7,7 +7,8 @@ class DiagnosticsTest < Minitest::Test
     m = Prophet.new
     m.fit(df, seed: 123)
 
-    df_cv = Prophet::Diagnostics.cross_validation(m, initial: "730 days", period: "180 days", horizon: "365 days")
+    days = 24 * 60 * 60
+    df_cv = Prophet::Diagnostics.cross_validation(m, initial: "730 days", period: 180 * days, horizon: "365 days")
     assert_equal 3988, df_cv.size
     assert_times ["2010-02-16 00:00:00 UTC", "2010-02-17 00:00:00 UTC"], df_cv["ds"].head(2)
     assert_times ["2016-01-19 00:00:00 UTC", "2016-01-20 00:00:00 UTC"], df_cv["ds"].tail(2)
