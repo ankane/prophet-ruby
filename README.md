@@ -88,6 +88,7 @@ Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/qu
 - [Multiplicative Seasonality](#multiplicative-seasonality)
 - [Uncertainty Intervals](#uncertainty-intervals)
 - [Non-Daily Data](#non-daily-data)
+- [Diagnostics](#diagnostics) [unreleased]
 - [Saving Models](#saving-models)
 
 ## Advanced Quick Start
@@ -306,6 +307,16 @@ df = Rover.read_csv("example_yosemite_temps.csv")
 m = Prophet.new(changepoint_prior_scale: 0.01).fit(df)
 future = m.make_future_dataframe(periods: 300, freq: "H")
 forecast = m.predict(future)
+```
+
+## Diagnostics
+
+[Explanation](http://facebook.github.io/prophet/docs/diagnostics.html)
+
+Cross validation
+
+```ruby
+df_cv = Prophet::Diagnostics.cross_validation(m, initial: "730 days", period: "180 days", horizon: "365 days")
 ```
 
 ## Saving Models

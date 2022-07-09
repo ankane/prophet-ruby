@@ -8,6 +8,7 @@ require "logger"
 require "set"
 
 # modules
+require "prophet/diagnostics"
 require "prophet/holidays"
 require "prophet/plot"
 require "prophet/forecaster"

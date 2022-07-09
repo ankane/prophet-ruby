@@ -3,7 +3,14 @@ module Prophet
     include Holidays
     include Plot
 
-    attr_reader :logger, :params, :train_holiday_names
+    attr_reader :logger, :params, :train_holiday_names,
+      :history, :seasonalities, :specified_changepoints, :fit_kwargs,
+      :growth, :changepoints, :n_changepoints, :changepoint_range,
+      :holidays, :seasonality_mode, :seasonality_prior_scale,
+      :holidays_prior_scale, :changepoint_prior_scale, :mcmc_samples,
+      :interval_width, :uncertainty_samples
+
+    attr_accessor :extra_regressors, :seasonalities, :country_holidays
 
     def initialize(
       growth: "linear",
