@@ -241,7 +241,7 @@ module Prophet
           # less than w, otherwise weight the mean by the difference
           excess_n = n_sum - w
           excess_x = excess_n * xs[i] / ns[i]
-          res_x[trailing_i] = (x_sum - excess_x)/ w
+          res_x[trailing_i] = (x_sum - excess_x) / w
           x_sum -= xs[trailing_i]
           n_sum -= ns[trailing_i]
           trailing_i -= 1
@@ -254,12 +254,95 @@ module Prophet
       Rover::DataFrame.new({"horizon" => res_h, name => res_x})
     end
 
+    # TODO fix
+    def self.rolling_median_by_h(x, h, w, name)
+      # Aggregate over h
+      df = Rover::DataFrame.new({"x" => x, "h" => h})
+      grouped = df.group("h")
+      df2 = grouped.size().reset_index().sort_values('h')
+      hs = df2["h"]
+
+      res_h = []
+      res_x = []
+      # Start from the right and work backwards
+      i = hs.length - 1
+      while i >= 0
+        h_i = hs[i]
+        xs = grouped.get_group(h_i).x.tolist()
+
+        # wrap in array so this works if h is pandas Series with custom index or numpy array
+        next_idx_to_add = np.array(h == h_i).argmax() - 1
+        while xs.length < w && next_idx_to_add >= 0
+          # Include points from the previous horizon. All of them if still
+          # less than w, otherwise just enough to get to w.
+          xs << x[next_idx_to_add]
+          next_idx_to_add -= 1
+        end
+        if xs.length < w
+          # Ran out of points before getting enough.
+          break
+        end
+        res_h << hs[i]
+        res_x << np.median(xs)
+        i -= 1
+      end
+      res_h.reverse!
+      res_x.reverse!
+      Rover::DataFrame.new({"horizon" => res_h, name => res_x})
+    end
+
     def self.mse(df, w)
       se = (df["y"] - df["yhat"]) ** 2
       if w < 0
         return Rover::DataFrame.new({"horizon" => df["horizon"], "mse" => se})
       end
       rolling_mean_by_h(se, df["horizon"], w, "mse")
+    end
+
+    def self.rmse(df, w)
+      res = mse(df, w)
+      res["rmse"] = res.delete("mse").map { |v| Math.sqrt(v) }
+      res
+    end
+
+    def self.mae(df, w)
+      ae = (df["y"] - df["yhat"]).abs
+      if w < 0
+        return Rover::DataFrame.new({"horizon" => df["horizon"], "mae" => ae})
+      end
+      rolling_mean_by_h(ae, df["horizon"], w, "mae")
+    end
+
+    def self.mape(df, w)
+      ape = ((df["y"] - df["yhat"]) / df["y"]).abs
+      if w < 0
+        return Rover::DataFrame.new({"horizon" => df["horizon"], "mape" => ape})
+      end
+      rolling_mean_by_h(ape, df["horizon"], w, "mape")
+    end
+
+    def self.mdape(df, w)
+      ape = ((df["y"] - df["yhat"]) / df["y"]).abs
+      if w < 0
+        return Rover::DataFrame.new({"horizon" => df["horizon"], "mdape" => ape})
+      end
+      rolling_median_by_h(ape, df["horizon"], w, "mdape")
+    end
+
+    def self.smape(df, w)
+      sape = (df["y"] - df["yhat"]).abs / ((df["y"].abs + df["yhat"].abs) / 2)
+      if w < 0
+        return Rover::DataFrame.new({"horizon" => df["horizon"], "smape" => sape})
+      end
+      rolling_mean_by_h(sape, df["horizon"], w, "smape")
+    end
+
+    def self.coverage(df, w)
+      is_covered = (df["y"] >= df["yhat_lower"]) & (df["y"] <= df["yhat_upper"])
+      if w < 0
+        return Rover::DataFrame.new({"horizon" => df["horizon"], "coverage" => is_covered})
+      end
+      rolling_mean_by_h(is_covered, df["horizon"], w, "coverage")
     end
   end
 end
