@@ -12,8 +12,13 @@ class DiagnosticsTest < Minitest::Test
     assert_times ["2010-02-15 00:00:00 UTC"], df_cv["cutoff"].first
     assert_times ["2015-01-20 00:00:00 UTC"], df_cv["cutoff"].last
 
-    # df_p = Prophet::Diagnostics.performance_metrics(df_cv)
-    # p df_p.head
+    df_p = Prophet::Diagnostics.performance_metrics(df_cv, metrics: ["mse"])
+    assert_equal 329, df_p.size
+    assert_equal 37, df_p["horizon"][0] / 86400
+    assert_equal 365, df_p["horizon"][-1] / 86400
+    # TODO fix
+    # assert_in_delta 0.494752, df_p["mse"][0]
+    # assert_in_delta 1.188329, df_p["mse"][-1]
   end
 
   def test_cross_validation_cutoffs

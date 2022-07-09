@@ -170,5 +170,96 @@ module Prophet
         value.dup
       end
     end
+
+    def self.performance_metrics(df, metrics: nil, rolling_window: 0.1, monthly: false)
+      valid_metrics = ["mse", "rmse", "mae", "mape", "mdape", "smape", "coverage"]
+      if metrics.nil?
+        metrics = valid_metrics
+      end
+      if (df["yhat_lower"].nil? || df["yhat_upper"].nil?) && metrics.include?("coverage")
+        metrics.delete("coverage")
+      end
+      if metrics.uniq.length != metrics.length
+        raise Error, "Input metrics must be a list of unique values"
+      end
+      if !Set.new(metrics).subset?(Set.new(valid_metrics))
+        raise Error, "Valid values for metrics are: #{valid_metrics}"
+      end
+      df_m = df.dup
+      if monthly
+        raise Error, "Not implemented yet"
+        # df_m["horizon"] = df_m["ds"].dt.to_period("M").astype(int) - df_m["cutoff"].dt.to_period("M").astype(int)
+      else
+        df_m["horizon"] = df_m["ds"] - df_m["cutoff"]
+      end
+      df_m.sort_by! { |r| r["horizon"] }
+      if metrics.include?("mape") && df_m["y"].abs.min < 1e-8
+        # logger.info("Skipping MAPE because y close to 0")
+        metrics.delete("mape")
+      end
+      if metrics.length == 0
+        return nil
+      end
+      w = (rolling_window * df_m.shape[0]).to_i
+      if w >= 0
+        w = [w, 1].max
+        w = [w, df_m.shape[0]].min
+      end
+      # Compute all metrics
+      dfs = {}
+      metrics.each do |metric|
+        dfs[metric] = send(metric, df_m, w)
+      end
+      res = dfs[metrics[0]]
+      metrics.each do |metric|
+        res_m = dfs[metric]
+        res[metric] = res_m[metric]
+      end
+      res
+    end
+
+    def self.rolling_mean_by_h(x, h, w, name)
+      # Aggregate over h
+      df = Rover::DataFrame.new({"x" => x, "h" => h})
+      df2 = df.group("h").sum("x").inner_join(df.group("h").count).sort_by { |r| r["h"] }
+      xs = df2["sum_x"]
+      ns = df2["count"]
+      hs = df2["h"]
+
+      trailing_i = df2.length - 1
+      x_sum = 0
+      n_sum = 0
+      # We don't know output size but it is bounded by len(df2)
+      res_x = [nil] * df2.length
+
+      # Start from the right and work backwards
+      (df2.length - 1).downto(0) do |i|
+        x_sum += xs[i]
+        n_sum += ns[i]
+        while n_sum >= w
+          # Include points from the previous horizon. All of them if still
+          # less than w, otherwise weight the mean by the difference
+          excess_n = n_sum - w
+          excess_x = excess_n * xs[i] / ns[i]
+          res_x[trailing_i] = (x_sum - excess_x)/ w
+          x_sum -= xs[trailing_i]
+          n_sum -= ns[trailing_i]
+          trailing_i -= 1
+        end
+      end
+
+      res_h = hs[(trailing_i + 1)..-1]
+      res_x = res_x[(trailing_i + 1)..-1]
+
+      Rover::DataFrame.new({"horizon" => res_h, name => res_x})
+    end
+
+    def self.mse(df, w)
+      se = (df["y"] - df["yhat"]) ** 2
+      if w < 0
+        return Rover::DataFrame.new({"horizon" => df["horizon"], "mse" => se})
+      end
+      rolling_mean_by_h(se, df["horizon"], w, "mse")
+    end
   end
 end
