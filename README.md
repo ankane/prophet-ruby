@@ -319,6 +319,13 @@ Cross validation
 df_cv = Prophet::Diagnostics.cross_validation(m, initial: "730 days", period: "180 days", horizon: "365 days")
 ```
 
+Custom cutoffs
+
+```ruby
+cutoffs = ["2013-02-15", "2013-08-15", "2014-02-15"].map { |v| Time.parse("#{v} 00:00:00 UTC") }
+df_cv2 = Prophet::Diagnostics.cross_validation(m, cutoffs: cutoffs, horizon: "365 days")
+```
+
 ## Saving Models
 
 [Explanation](https://facebook.github.io/prophet/docs/additional_topics.html#saving-models)
