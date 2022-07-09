@@ -23,4 +23,8 @@ class Minitest::Test
   def load_example
     Rover.read_csv("examples/example_wp_log_peyton_manning.csv")
   end
+
+  def test_python?
+    ENV["TEST_PYTHON"]
+  end
 end

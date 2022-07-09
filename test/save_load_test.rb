@@ -19,7 +19,7 @@ class SaveLoadTest < Minitest::Test
   end
 
   def test_load_in_python
-    skip unless ENV["TEST_PYTHON"]
+    skip unless test_python?
 
     df = load_example
 
@@ -32,7 +32,7 @@ class SaveLoadTest < Minitest::Test
   end
 
   def test_load_from_python
-    skip unless ENV["TEST_PYTHON"]
+    skip unless test_python?
 
     system "python3", "test/support/save.py", exception: true
 

@@ -269,6 +269,8 @@ class ProphetTest < Minitest::Test
   private
 
   def plot(m, forecast, name)
+    return unless test_python?
+
     fig = m.plot(forecast)
     fig.savefig("/tmp/#{name}.png")
     m.add_changepoints_to_plot(fig.gca, forecast)
