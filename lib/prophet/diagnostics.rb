@@ -154,7 +154,10 @@ module Prophet
     end
 
     def self.timedelta(value)
-      if (m = /\A(\d+(\.\d+)?) days\z/.match(value))
+      if value.is_a?(Numeric)
+        # ActiveSupport::Duration is a numeric
+        value
+      elsif (m = /\A(\d+(\.\d+)?) days\z/.match(value))
         m[1].to_f * 86400
       else
         raise Error, "Unknown time delta"
@@ -254,7 +257,6 @@ module Prophet
       Rover::DataFrame.new({"horizon" => res_h, name => res_x})
     end
 
-    # TODO fix
     def self.rolling_median_by_h(x, h, w, name)
       # Aggregate over h
       df = Rover::DataFrame.new({"x" => x, "h" => h})
