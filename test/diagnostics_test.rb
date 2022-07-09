@@ -18,11 +18,14 @@ class DiagnosticsTest < Minitest::Test
     assert_times ["2010-02-15 00:00:00 UTC", "2010-02-15 00:00:00 UTC"], df_cv["cutoff"].head(2)
     assert_times ["2015-01-20 00:00:00 UTC", "2015-01-20 00:00:00 UTC"], df_cv["cutoff"].tail(2)
 
-    df_p = Prophet::Diagnostics.performance_metrics(df_cv, metrics: ["mse", "rmse"])
+    df_p = Prophet::Diagnostics.performance_metrics(df_cv)
+
+    # convert to days
+    df_p["horizon"] /= 86400.0
+
     assert_equal 329, df_p.size
-    assert_equal [37, 38], (df_p["horizon"].head(2) / 86400.0).to_a
-    assert_equal [364, 365], (df_p["horizon"].tail(2) / 86400.0).to_a
-    # TODO fix
+    assert_equal [37, 38], df_p["horizon"].head(2).to_a
+    assert_equal [364, 365], df_p["horizon"].tail(2).to_a
     # assert_elements_in_delta [0.494752, 0.500521], df_p["mse"].head(2), 0.001
     # assert_elements_in_delta [1.175513, 1.188329], df_p["mse"].tail(2), 0.001
     # assert_elements_in_delta [0.703386, 0.707475], df_p["rmse"].head(2), 0.001

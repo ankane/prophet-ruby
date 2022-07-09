@@ -1,6 +1,6 @@
 ## 0.4.1 (unreleased)
 
-- Added support for cross validation
+- Added support for cross validation and performance metrics
 
 ## 0.4.0 (2022-07-07)
 

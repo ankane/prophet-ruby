@@ -259,7 +259,7 @@ module Prophet
       # Aggregate over h
       df = Rover::DataFrame.new({"x" => x, "h" => h})
       grouped = df.group("h")
-      df2 = grouped.size().reset_index().sort_values('h')
+      df2 = grouped.count.sort_by { |r| r["h"] }
       hs = df2["h"]
 
       res_h = []
@@ -268,10 +268,9 @@ module Prophet
       i = hs.length - 1
       while i >= 0
         h_i = hs[i]
-        xs = grouped.get_group(h_i).x.tolist()
+        xs = df[df["h"] == h_i]["x"].to_a
 
-        # wrap in array so this works if h is pandas Series with custom index or numpy array
-        next_idx_to_add = np.array(h == h_i).argmax() - 1
+        next_idx_to_add = (h == h_i).to_numo.cast_to(Numo::UInt8).argmax - 1
         while xs.length < w && next_idx_to_add >= 0
           # Include points from the previous horizon. All of them if still
           # less than w, otherwise just enough to get to w.
@@ -283,7 +282,7 @@ module Prophet
           break
         end
         res_h << hs[i]
-        res_x << np.median(xs)
+        res_x << Rover::Vector.new(xs).median
         i -= 1
       end
       res_h.reverse!
@@ -342,7 +341,7 @@ module Prophet
       if w < 0
         return Rover::DataFrame.new({"horizon" => df["horizon"], "coverage" => is_covered})
       end
-      rolling_mean_by_h(is_covered, df["horizon"], w, "coverage")
+      rolling_mean_by_h(is_covered.to(:float), df["horizon"], w, "coverage")
     end
   end
 end

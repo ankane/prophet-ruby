@@ -326,6 +326,12 @@ cutoffs = ["2013-02-15", "2013-08-15", "2014-02-15"].map { |v| Time.parse("#{v} 
 df_cv2 = Prophet::Diagnostics.cross_validation(m, cutoffs: cutoffs, horizon: "365 days")
 ```
 
+Get performance metrics
+
+```ruby
+df_p = Prophet::Diagnostics.performance_metrics(df_cv)
+```
+
 ## Saving Models
 
 [Explanation](https://facebook.github.io/prophet/docs/additional_topics.html#saving-models)

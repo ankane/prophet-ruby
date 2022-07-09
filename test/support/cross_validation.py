@@ -13,7 +13,7 @@ print(len(df_cv))
 print(df_cv.head())
 print(df_cv.tail())
 
-df_p = performance_metrics(df_cv, metrics=['mse'])
+df_p = performance_metrics(df_cv)
 print(len(df_p))
 print(df_p.head())
 print(df_p.tail())
