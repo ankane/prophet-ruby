@@ -87,6 +87,7 @@ Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/qu
 - [Holidays and Special Events](#holidays-and-special-events)
 - [Multiplicative Seasonality](#multiplicative-seasonality)
 - [Uncertainty Intervals](#uncertainty-intervals)
+- [Outliers](#outliers)
 - [Non-Daily Data](#non-daily-data)
 - [Diagnostics](#diagnostics)
 - [Additional Topics](#additional-topics)
@@ -307,6 +308,18 @@ Get uncertainty in seasonality
 
 ```ruby
 Prophet.new(mcmc_samples: 300)
+```
+
+## Outliers
+
+[Explanation](https://facebook.github.io/prophet/docs/outliers.html)
+
+Remove outliers
+
+```ruby
+df = Rover.read_csv("example_wp_log_R_outliers1.csv")
+df["y"][(df["ds"] > "2010-01-01") & (df["ds"] < "2011-01-01")] = Float::NAN
+m = Prophet.new.fit(df)
 ```
 
 ## Non-Daily Data

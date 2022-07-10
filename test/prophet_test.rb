@@ -292,6 +292,16 @@ class ProphetTest < Minitest::Test
     m2 = Prophet.new.fit(df, init: stan_init(m1)) # Adding the last day, warm-starting from m1
   end
 
+  def test_outliers
+    df = Rover.read_csv("examples/example_wp_log_R_outliers1.csv")
+    df["y"][(df["ds"] > "2010-01-01") & (df["ds"] < "2011-01-01")] = Float::NAN
+    m = Prophet.new.fit(df)
+    future = m.make_future_dataframe(periods: 1096)
+    forecast = m.predict(future)
+
+    plot(m, forecast, "outliers")
+  end
+
   private
 
   def stan_init(m)
