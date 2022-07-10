@@ -88,7 +88,7 @@ Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/qu
 - [Multiplicative Seasonality](#multiplicative-seasonality)
 - [Uncertainty Intervals](#uncertainty-intervals)
 - [Non-Daily Data](#non-daily-data)
-- [Diagnostics](#diagnostics) [unreleased]
+- [Diagnostics](#diagnostics)
 - [Additional Topics](#additional-topics)
 
 ## Advanced Quick Start

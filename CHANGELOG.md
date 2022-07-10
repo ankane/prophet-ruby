@@ -1,4 +1,4 @@
-## 0.4.1 (unreleased)
+## 0.4.1 (2022-07-10)
 
 - Added support for cross validation and performance metrics
 - Added support for updating fitted models
