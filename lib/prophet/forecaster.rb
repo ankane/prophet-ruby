@@ -183,8 +183,10 @@ module Prophet
 
       initialize_scales(initialize_scales, df)
 
-      if @logistic_floor && !df.include?("floor")
-        raise ArgumentError, "Expected column \"floor\"."
+      if @logistic_floor
+        unless df.include?("floor")
+          raise ArgumentError, "Expected column \"floor\"."
+        end
       else
         df["floor"] = 0
       end
@@ -214,7 +216,12 @@ module Prophet
     def initialize_scales(initialize_scales, df)
       return unless initialize_scales
 
-      floor = 0
+      if @growth == "logistic" && df.include?("floor")
+        @logistic_floor = true
+        floor = df["floor"]
+      else
+        floor = 0.0
+      end
       @y_scale = (df["y"] - floor).abs.max
       @y_scale = 1 if @y_scale == 0
       @start = df["ds"].min

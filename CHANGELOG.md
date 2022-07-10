@@ -2,6 +2,7 @@
 
 - Added support for cross validation and performance metrics
 - Added support for updating fitted models
+- Added support for saturating minimum forecasts
 
 ## 0.4.0 (2022-07-07)
 

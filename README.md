@@ -178,8 +178,21 @@ df = Rover.read_csv("example_wp_log_R.csv")
 df["cap"] = 8.5
 m = Prophet.new(growth: "logistic")
 m.fit(df)
-future = m.make_future_dataframe(periods: 365)
+future = m.make_future_dataframe(periods: 1826)
 future["cap"] = 8.5
+forecast = m.predict(future)
+```
+
+Saturating minimum
+
+```ruby
+df["y"] = 10 - df["y"]
+df["cap"] = 6
+df["floor"] = 1.5
+future["cap"] = 6
+future["floor"] = 1.5
+m = Prophet.new(growth: "logistic")
+m.fit(df)
 forecast = m.predict(future)
 ```
 

@@ -65,6 +65,23 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "logistic")
   end
 
+  def test_logistic_floor
+    df = Rover.read_csv("examples/example_wp_log_R.csv")
+    df["y"] = 10 - df["y"]
+    df["cap"] = 6
+    df["floor"] = 1.5
+
+    m = Prophet.new(growth: "logistic")
+    m.fit(df, seed: 123)
+
+    future = m.make_future_dataframe(periods: 1826)
+    future["cap"] = 6
+    future["floor"] = 1.5
+    forecast = m.predict(future)
+
+    plot(m, forecast, "logistic_floor")
+  end
+
   def test_flat
     df = load_example
 
