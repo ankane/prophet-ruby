@@ -61,4 +61,33 @@ class DiagnosticsTest < Minitest::Test
     end
     assert_equal "Input metrics must be a list of unique values", error.message
   end
+
+  def test_hyperparameter_tuning
+    skip # takes a while
+
+    df = load_example
+    cutoffs = ["2013-02-15", "2013-08-15", "2014-02-15"].map { |v| Time.parse("#{v} 00:00:00 UTC") }
+
+    param_grid = {
+      changepoint_prior_scale: [0.001, 0.01, 0.1, 0.5],
+      seasonality_prior_scale: [0.01, 0.1, 1.0, 10.0]
+    }
+
+    # Generate all combinations of parameters
+    all_params = param_grid.values[0].product(*param_grid.values[1..-1]).map { |v| param_grid.keys.zip(v).to_h }
+    rmses = [] # Store the RMSEs for each params here
+
+    # Use cross validation to evaluate all parameters
+    all_params.each do |params|
+      m = Prophet.new(**params).fit(df) # Fit model with given params
+      df_cv = Prophet::Diagnostics.cross_validation(m, cutoffs: cutoffs, horizon: "30 days")
+      df_p = Prophet::Diagnostics.performance_metrics(df_cv, rolling_window: 1)
+      rmses << df_p["rmse"][0]
+    end
+
+    # Find the best parameters
+    tuning_results = Rover::DataFrame.new(all_params)
+    tuning_results["rmse"] = rmses
+    assert_equal 16, tuning_results.size
+  end
 end

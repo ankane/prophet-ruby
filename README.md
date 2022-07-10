@@ -338,6 +338,32 @@ Plot cross validation metrics
 Prophet::Plot.plot_cross_validation_metric(df_cv, metric: "mape")
 ```
 
+Hyperparameter tuning
+
+```ruby
+param_grid = {
+  changepoint_prior_scale: [0.001, 0.01, 0.1, 0.5],
+  seasonality_prior_scale: [0.01, 0.1, 1.0, 10.0]
+}
+
+# Generate all combinations of parameters
+all_params = param_grid.values[0].product(*param_grid.values[1..-1]).map { |v| param_grid.keys.zip(v).to_h }
+rmses = [] # Store the RMSEs for each params here
+
+# Use cross validation to evaluate all parameters
+all_params.each do |params|
+  m = Prophet.new(**params).fit(df) # Fit model with given params
+  df_cv = Prophet::Diagnostics.cross_validation(m, cutoffs: cutoffs, horizon: "30 days")
+  df_p = Prophet::Diagnostics.performance_metrics(df_cv, rolling_window: 1)
+  rmses << df_p["rmse"][0]
+end
+
+# Find the best parameters
+tuning_results = Rover::DataFrame.new(all_params)
+tuning_results["rmse"] = rmses
+p tuning_results
+```
+
 ## Additional Topics
 
 [Explanation](https://facebook.github.io/prophet/docs/additional_topics.html)
