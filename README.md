@@ -89,7 +89,7 @@ Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/qu
 - [Uncertainty Intervals](#uncertainty-intervals)
 - [Non-Daily Data](#non-daily-data)
 - [Diagnostics](#diagnostics) [unreleased]
-- [Saving Models](#saving-models)
+- [Additional Topics](#additional-topics)
 
 ## Advanced Quick Start
 
@@ -338,9 +338,9 @@ Plot cross validation metrics
 Prophet::Plot.plot_cross_validation_metric(df_cv, metric: "mape")
 ```
 
-## Saving Models
+## Additional Topics
 
-[Explanation](https://facebook.github.io/prophet/docs/additional_topics.html#saving-models)
+[Explanation](https://facebook.github.io/prophet/docs/additional_topics.html)
 
 Save a model
 
@@ -355,6 +355,34 @@ m = Prophet.from_json(File.read("model.json"))
 ```
 
 Uses the same format as Python, so models can be saved and loaded in either language
+
+Flat trend
+
+```ruby
+m = Prophet.new(growth: "flat")
+```
+
+Updating fitted models
+
+```ruby
+def stan_init(m)
+  res = {}
+  ["k", "m", "sigma_obs"].each do |pname|
+    res[pname] = m.params[pname][0, true][0]
+  end
+  ["delta", "beta"].each do |pname|
+    res[pname] = m.params[pname][0, true]
+  end
+  res
+end
+
+df = Rover.read_csv("example_wp_log_peyton_manning.csv")
+df1 = df[df["ds"] <= "2016-01-19"] # All data except the last day
+m1 = Prophet.new.fit(df1) # A model fit to all data except the last day
+
+m2 = Prophet.new.fit(df) # Adding the last day, fitting from scratch
+m2 = Prophet.new.fit(df, init: stan_init(m1)) # Adding the last day, warm-starting from m1
+```
 
 ## Resources
 

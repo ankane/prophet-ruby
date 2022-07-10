@@ -266,7 +266,27 @@ class ProphetTest < Minitest::Test
     assert_equal "Data frame must have ds and y columns", error.message
   end
 
+  def test_updating_fitted_model
+    df = load_example
+    df1 = df[df["ds"] <= "2016-01-19"] # All data except the last day
+    m1 = Prophet.new.fit(df1) # A model fit to all data except the last day
+
+    m2 = Prophet.new.fit(df) # Adding the last day, fitting from scratch
+    m2 = Prophet.new.fit(df, init: stan_init(m1)) # Adding the last day, warm-starting from m1
+  end
+
   private
+
+  def stan_init(m)
+    res = {}
+    ["k", "m", "sigma_obs"].each do |pname|
+      res[pname] = m.params[pname][0, true][0]
+    end
+    ["delta", "beta"].each do |pname|
+      res[pname] = m.params[pname][0, true]
+    end
+    res
+  end
 
   def plot(m, forecast, name)
     return unless test_python?

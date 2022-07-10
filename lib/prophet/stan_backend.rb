@@ -13,6 +13,11 @@ module Prophet
 
     def fit(stan_init, stan_data, **kwargs)
       stan_init, stan_data = prepare_data(stan_init, stan_data)
+
+      if !kwargs[:inits] && kwargs[:init]
+        kwargs[:inits] = prepare_data(kwargs.delete(:init), stan_data)[0]
+      end
+
       kwargs[:algorithm] ||= stan_data["T"] < 100 ? "Newton" : "LBFGS"
       iterations = 10000
 
@@ -48,6 +53,10 @@ module Prophet
 
     def sampling(stan_init, stan_data, samples, **kwargs)
       stan_init, stan_data = prepare_data(stan_init, stan_data)
+
+      if !kwargs[:inits] && kwargs[:init]
+        kwargs[:inits] = prepare_data(kwargs.delete(:init), stan_data)[0]
+      end
 
       kwargs[:chains] ||= 4
       kwargs[:warmup_iters] ||= samples / 2
@@ -128,7 +137,7 @@ module Prophet
       stan_data["t_change"] = stan_data["t_change"].to_a
       stan_data["s_a"] = stan_data["s_a"].to_a
       stan_data["s_m"] = stan_data["s_m"].to_a
-      stan_data["X"] = stan_data["X"].to_numo.to_a
+      stan_data["X"] = stan_data["X"].respond_to?(:to_numo) ? stan_data["X"].to_numo.to_a : stan_data["X"].to_a
       stan_init["delta"] = stan_init["delta"].to_a
       stan_init["beta"] = stan_init["beta"].to_a
       [stan_init, stan_data]
