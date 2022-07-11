@@ -210,6 +210,20 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "multiplicative_seasonality")
   end
 
+  def test_override_seasonality_mode
+    df = Rover.read_csv("examples/example_air_passengers.csv")
+
+    m = Prophet.new(seasonality_mode: "multiplicative")
+    m.add_seasonality(name: "quarterly", period: 91.25, fourier_order: 8, mode: "additive")
+    # m.add_regressor("regressor", mode: "additive")
+
+    m.fit(df, seed: 123)
+    future = m.make_future_dataframe(periods: 50, freq: "MS")
+    forecast = m.predict(future)
+
+    plot(m, forecast, "override_seasonality_mode")
+  end
+
   def test_subdaily
     df = Rover.read_csv("examples/example_yosemite_temps.csv")
     df["y"][df["y"] == "NaN"] = nil

@@ -288,12 +288,22 @@ forecast = m.predict(future)
 
 [Explanation](https://facebook.github.io/prophet/docs/multiplicative_seasonality.html)
 
+Specify multiplicative seasonality
+
 ```ruby
 df = Rover.read_csv("example_air_passengers.csv")
 m = Prophet.new(seasonality_mode: "multiplicative")
 m.fit(df)
 future = m.make_future_dataframe(periods: 50, freq: "MS")
 forecast = m.predict(future)
+```
+
+Specify mode when adding seasonality and regressors
+
+```ruby
+m = Prophet.new(seasonality_mode: "multiplicative")
+m.add_seasonality(name: "quarterly", period: 91.25, fourier_order: 8, mode: "additive")
+m.add_regressor("regressor", mode: "additive")
 ```
 
 ## Uncertainty Intervals
