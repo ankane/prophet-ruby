@@ -308,6 +308,8 @@ m.add_regressor("regressor", mode: "additive")
 
 ## Uncertainty Intervals
 
+[Explanation](https://facebook.github.io/prophet/docs/uncertainty_intervals.html)
+
 Specify the width of uncertainty intervals (80% by default)
 
 ```ruby
