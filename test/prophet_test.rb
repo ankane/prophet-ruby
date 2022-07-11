@@ -123,6 +123,33 @@ class ProphetTest < Minitest::Test
   def test_holidays
     df = load_example
 
+    playoffs = Rover::DataFrame.new(
+      "holiday" => "playoff",
+      "ds" => [
+        "2008-01-13", "2009-01-03", "2010-01-16",
+        "2010-01-24", "2010-02-07", "2011-01-08",
+        "2013-01-12", "2014-01-12", "2014-01-19",
+        "2014-02-02", "2015-01-11", "2016-01-17",
+        "2016-01-24", "2016-02-07"
+      ],
+      "lower_window" => 0,
+      "upper_window" => 1
+    )
+    superbowls = Rover::DataFrame.new(
+      "holiday" => "superbowl",
+      "ds" => ["2010-02-07", "2014-02-02", "2016-02-07"],
+      "lower_window" => 0,
+      "upper_window" => 1
+    )
+    holidays = playoffs.concat(superbowls)
+
+    m = Prophet.new(holidays: holidays)
+    m.fit(df)
+  end
+
+  def test_country_holidays
+    df = load_example
+
     m = Prophet.new
     m.add_country_holidays("US")
     m.fit(df, seed: 123)
@@ -144,7 +171,7 @@ class ProphetTest < Minitest::Test
     assert_elements_in_delta [7.400929, 7.389584], forecast["yhat_lower"].tail(2)
     assert_elements_in_delta [8.863748, 8.867099], forecast["yhat_upper"].tail(2)
 
-    plot(m, forecast, "holidays")
+    plot(m, forecast, "country_holidays")
   end
 
   def test_mcmc_samples
