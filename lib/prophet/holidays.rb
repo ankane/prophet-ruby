@@ -3,8 +3,10 @@ module Prophet
     def get_holiday_names(country)
       years = (1995..2045).to_a
       holiday_names = make_holidays_df(years, country)["holiday"].uniq
-      # TODO raise error in 0.4.0
-      logger.warn "Holidays in #{country} are not currently supported"
+      if holiday_names.size == 0
+        # TODO raise error in 0.5.0
+        logger.warn "Holidays in #{country} are not currently supported"
+      end
       holiday_names
     end
 

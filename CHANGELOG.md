@@ -1,3 +1,7 @@
+## 0.4.2 (unreleased)
+
+- Fixed warning with `add_country_holidays` method
+
 ## 0.4.1 (2022-07-10)
 
 - Added support for cross validation and performance metrics
