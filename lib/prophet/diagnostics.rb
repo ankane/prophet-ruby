@@ -179,7 +179,7 @@ module Prophet
       if metrics.nil?
         metrics = valid_metrics
       end
-      if (df["yhat_lower"].nil? || df["yhat_upper"].nil?) && metrics.include?("coverage")
+      if (!df.include?("yhat_lower") || !df.include?("yhat_upper")) && metrics.include?("coverage")
         metrics.delete("coverage")
       end
       if metrics.uniq.length != metrics.length
