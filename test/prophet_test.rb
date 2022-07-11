@@ -174,6 +174,16 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "country_holidays")
   end
 
+  def test_country_holidays_unsupported
+    skip # TODO uncomment in 0.5.0
+
+    m = Prophet.new
+    error = assert_raises(ArgumentError) do
+      m.add_country_holidays("USA")
+    end
+    assert_equal "Holidays in USA are not currently supported", error.message
+  end
+
   def test_mcmc_samples
     df = load_example
 
