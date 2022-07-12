@@ -125,8 +125,8 @@ module Prophet
         "holidays", "zeros", "extra_regressors_additive", "yhat",
         "extra_regressors_multiplicative", "multiplicative_terms",
       ]
-      rn_l = reserved_names.map { |n| n + "_lower" }
-      rn_u = reserved_names.map { |n| n + "_upper" }
+      rn_l = reserved_names.map { |n| "#{n}_lower" }
+      rn_u = reserved_names.map { |n| "#{n}_upper" }
       reserved_names.concat(rn_l)
       reserved_names.concat(rn_u)
       reserved_names.concat(["ds", "y", "cap", "floor", "y_scaled", "cap_scaled"])
@@ -167,7 +167,7 @@ module Prophet
           raise ArgumentError, "Found NaN in column #{name.inspect}"
         end
       end
-      @seasonalities.values.each do |props|
+      @seasonalities.each_value do |props|
         condition_name = props[:condition_name]
         if condition_name
           if !df.include?(condition_name)
@@ -481,14 +481,14 @@ module Prophet
       end
       # Add totals additive and multiplicative components, and regressors
       ["additive", "multiplicative"].each do |mode|
-        components = add_group_component(components, mode + "_terms", modes[mode])
+        components = add_group_component(components, "#{mode}_terms", modes[mode])
         regressors_by_mode = @extra_regressors.select { |r, props| props[:mode] == mode }
           .map { |r, props| r }
-        components = add_group_component(components, "extra_regressors_" + mode, regressors_by_mode)
+        components = add_group_component(components, "extra_regressors_#{mode}", regressors_by_mode)
 
         # Add combination components to modes
-        modes[mode] << mode + "_terms"
-        modes[mode] << "extra_regressors_" + mode
+        modes[mode] << "#{mode}_terms"
+        modes[mode] << "extra_regressors_#{mode}"
       end
       # After all of the additive/multiplicative groups have been added,
       modes[@seasonality_mode] << "holidays"
@@ -817,8 +817,8 @@ module Prophet
         end
         data[component] = comp.mean(axis: 1, nan: true)
         if @uncertainty_samples
-          data[component + "_lower"] = comp.percentile(lower_p, axis: 1)
-          data[component + "_upper"] = comp.percentile(upper_p, axis: 1)
+          data["#{component}_lower"] = comp.percentile(lower_p, axis: 1)
+          data["#{component}_upper"] = comp.percentile(upper_p, axis: 1)
         end
       end
       Rover::DataFrame.new(data)

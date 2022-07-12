@@ -183,7 +183,7 @@ module Prophet
         ax.plot(fcst_t, fcst["floor"].to_a, ls: "--", c: "k")
       end
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(fcst_t, fcst[name + "_lower"].to_a, fcst[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(fcst_t, fcst["#{name}_lower"].to_a, fcst["#{name}_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       # Specify formatting to workaround matplotlib issue #12925
       locator = dates.AutoDateLocator.new(interval_multiples: false)
@@ -229,7 +229,7 @@ module Prophet
       days = days.map { |v| v.strftime("%A") }
       artists += ax.plot(days.size.times.to_a, seas[name].to_a, ls: "-", c: "#0072B2")
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(days.size.times.to_a, seas[name + "_lower"].to_a, seas[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(days.size.times.to_a, seas["#{name}_lower"].to_a, seas["#{name}_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       ax.set_xticks(days.size.times.to_a)
@@ -255,7 +255,7 @@ module Prophet
       seas = predict_seasonal_components(df_y)
       artists += ax.plot(to_pydatetime(df_y["ds"]), seas[name].to_a, ls: "-", c: "#0072B2")
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas[name + "_lower"].to_a, seas[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas["#{name}_lower"].to_a, seas["#{name}_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       months = dates.MonthLocator.new((1..12).to_a, bymonthday: 1, interval: 2)
@@ -288,7 +288,7 @@ module Prophet
       seas = predict_seasonal_components(df_y)
       artists += ax.plot(to_pydatetime(df_y["ds"]), seas[name].to_a, ls: "-", c: "#0072B2")
       if uncertainty && @uncertainty_samples
-        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas[name + "_lower"].to_a, seas[name + "_upper"].to_a, color: "#0072B2", alpha: 0.2)]
+        artists += [ax.fill_between(to_pydatetime(df_y["ds"]), seas["#{name}_lower"].to_a, seas["#{name}_upper"].to_a, color: "#0072B2", alpha: 0.2)]
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       step = (finish - start) / (7 - 1).to_f
