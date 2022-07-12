@@ -89,7 +89,7 @@ module Prophet
         raise ArgumentError, "Parameter \"changepoint_range\" must be in [0, 1]"
       end
       if @holidays
-        if !@holidays.is_a?(Rover::DataFrame) && @holidays.include?("ds") && @holidays.include?("holiday")
+        if !(@holidays.is_a?(Rover::DataFrame) && @holidays.include?("ds") && @holidays.include?("holiday"))
           raise ArgumentError, "holidays must be a DataFrame with \"ds\" and \"holiday\" columns."
         end
         @holidays["ds"] = to_datetime(@holidays["ds"])
