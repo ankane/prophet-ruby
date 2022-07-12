@@ -142,7 +142,7 @@ module Prophet
       if check_seasonalities && @seasonalities[name]
         raise ArgumentError, "Name #{name.inspect} already used for a seasonality."
       end
-      if check_regressors and @extra_regressors[name]
+      if check_regressors && @extra_regressors[name]
         raise ArgumentError, "Name #{name.inspect} already used for an added regressor."
       end
     end
