@@ -7,15 +7,17 @@ jobs:
       matrix:
         include:
         - ruby: 3.1
-          os: ubuntu-20.04
+          os: ubuntu-22.04
         - ruby: "3.0"
           os: ubuntu-18.04
         - ruby: 2.7
           os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
     - run: pip install matplotlib prophet
     - uses: ruby/setup-ruby@v1
       with:
