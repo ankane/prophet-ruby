@@ -27,7 +27,7 @@ def download_platform(platform)
   sha256 = config.fetch("sha256")
 
   puts "Downloading #{url}..."
-  contents = URI.open(url).read
+  contents = URI.parse(url).read
 
   computed_sha256 = Digest::SHA256.hexdigest(contents)
   raise "Bad hash: #{computed_sha256}" if computed_sha256 != sha256
