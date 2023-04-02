@@ -8,12 +8,12 @@ require "logger"
 require "set"
 
 # modules
-require "prophet/diagnostics"
-require "prophet/holidays"
-require "prophet/plot"
-require "prophet/forecaster"
-require "prophet/stan_backend"
-require "prophet/version"
+require_relative "prophet/diagnostics"
+require_relative "prophet/holidays"
+require_relative "prophet/plot"
+require_relative "prophet/forecaster"
+require_relative "prophet/stan_backend"
+require_relative "prophet/version"
 
 module Prophet
   class Error < StandardError; end
