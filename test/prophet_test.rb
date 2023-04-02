@@ -123,7 +123,7 @@ class ProphetTest < Minitest::Test
   def test_holidays
     df = load_example
 
-    playoffs = Rover::DataFrame.new(
+    playoffs = Rover::DataFrame.new({
       "holiday" => "playoff",
       "ds" => [
         "2008-01-13", "2009-01-03", "2010-01-16",
@@ -134,13 +134,13 @@ class ProphetTest < Minitest::Test
       ],
       "lower_window" => 0,
       "upper_window" => 1
-    )
-    superbowls = Rover::DataFrame.new(
+    })
+    superbowls = Rover::DataFrame.new({
       "holiday" => "superbowl",
       "ds" => ["2010-02-07", "2014-02-02", "2016-02-07"],
       "lower_window" => 0,
       "upper_window" => 1
-    )
+    })
     holidays = playoffs.concat(superbowls)
 
     m = Prophet.new(holidays: holidays)

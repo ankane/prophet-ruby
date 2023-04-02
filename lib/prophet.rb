@@ -1,7 +1,7 @@
 # dependencies
 require "cmdstan"
-require "rover"
 require "numo/narray"
+require "rover"
 
 # stdlib
 require "logger"
