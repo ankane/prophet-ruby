@@ -44,7 +44,7 @@ module Prophet
       @yearly_seasonality = yearly_seasonality
       @weekly_seasonality = weekly_seasonality
       @daily_seasonality = daily_seasonality
-      @holidays = holidays
+      @holidays = convert_df(holidays)
 
       @seasonality_mode = seasonality_mode
       @seasonality_prior_scale = seasonality_prior_scale.to_f
@@ -631,9 +631,7 @@ module Prophet
     def fit(df, **kwargs)
       raise Error, "Prophet object can only be fit once" if @history
 
-      if defined?(Daru::DataFrame) && df.is_a?(Daru::DataFrame)
-        df = Rover::DataFrame.new(df.to_h)
-      end
+      df = convert_df(df)
       raise ArgumentError, "Must be a data frame" unless df.is_a?(Rover::DataFrame)
 
       unless df.include?("ds") && df.include?("y")
@@ -992,6 +990,14 @@ module Prophet
     end
 
     private
+
+    def convert_df(df)
+      if defined?(Daru::DataFrame) && df.is_a?(Daru::DataFrame)
+        Rover::DataFrame.new(df.to_h)
+      else
+        df
+      end
+    end
 
     # Time is preferred over DateTime in Ruby docs
     # use UTC to be consistent with Python
