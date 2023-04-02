@@ -19,16 +19,17 @@ module Prophet
       end
 
       kwargs[:algorithm] ||= stan_data["T"] < 100 ? "Newton" : "LBFGS"
-      iterations = 10000
+
+      args = {
+        data: stan_data,
+        inits: stan_init,
+        iter: 10000
+      }
+      args.merge!(kwargs)
 
       stan_fit = nil
       begin
-        stan_fit = @model.optimize(
-          data: stan_data,
-          inits: stan_init,
-          iter: iterations,
-          **kwargs
-        )
+        stan_fit = @model.optimize(**args)
       rescue => e
         if kwargs[:algorithm] != "Newton"
           @logger.warn "Optimization terminated abnormally. Falling back to Newton."
