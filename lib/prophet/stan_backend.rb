@@ -19,11 +19,12 @@ module Prophet
       end
 
       kwargs[:algorithm] ||= stan_data["T"] < 100 ? "Newton" : "LBFGS"
+      iterations = 10000
 
       args = {
         data: stan_data,
         inits: stan_init,
-        iter: 10000
+        iter: iterations
       }
       args.merge!(kwargs)
 
