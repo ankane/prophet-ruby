@@ -21,8 +21,8 @@ class ProphetTest < Minitest::Test
 
     if mac?
       assert_in_delta 8004.75, m.params["lp__"][0], 1
-      # assert_in_delta -0.359494, m.params["k"][0], 0.01
-      # assert_in_delta 0.626234, m.params["m"][0]
+      assert_in_delta -0.359494, m.params["k"][0], 0.01
+      assert_in_delta 0.626234, m.params["m"][0]
     end
 
     future = m.make_future_dataframe(periods: 365)

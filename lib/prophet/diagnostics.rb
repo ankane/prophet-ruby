@@ -83,15 +83,15 @@ module Prophet
       predicts = cutoffs.map { |cutoff| single_cutoff_forecast(df, model, cutoff, horizon, predict_columns) }
 
       # Combine all predicted DataFrame into one DataFrame
-      predicts.reduce(Polars::DataFrame.new) { |memo, v| memo.concat(v) }
+      Polars.concat(predicts)
     end
 
     def self.single_cutoff_forecast(df, model, cutoff, horizon, predict_columns)
       # Generate new object with copying fitting options
       m = prophet_copy(model, cutoff)
       # Train model
-      history_c = df[df["ds"] <= cutoff]
-      if history_c.shape[0] < 2
+      history_c = df.filter(df["ds"] <= cutoff)
+      if history_c.height < 2
         raise Error, "Less than two datapoints before cutoff. Increase initial window."
       end
       m.fit(history_c, **model.fit_kwargs)
@@ -107,9 +107,9 @@ module Prophet
       end
       columns.concat(m.extra_regressors.keys)
       columns.concat(m.seasonalities.map { |_, props| props[:condition_name] }.compact)
-      yhat = m.predict(df[index_predicted][columns])
+      yhat = m.predict(df.filter(index_predicted)[columns])
       # Merge yhat(predicts), y(df, original data) and cutoff
-      yhat[predict_columns].merge(df[index_predicted][["y"]]).merge(Polars::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))
+      yhat[predict_columns].hstack(df.filter(index_predicted)[["y"]]).hstack(Polars::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))
     end
 
     def self.prophet_copy(m, cutoff = nil)
@@ -195,7 +195,7 @@ module Prophet
       else
         df_m["horizon"] = df_m["ds"] - df_m["cutoff"]
       end
-      df_m.sort_by! { |r| r["horizon"] }
+      df_m.sort("horizon")
       if metrics.include?("mape") && df_m["y"].abs.min < 1e-8
         # logger.info("Skipping MAPE because y close to 0")
         metrics.delete("mape")
@@ -224,7 +224,7 @@ module Prophet
     def self.rolling_mean_by_h(x, h, w, name)
       # Aggregate over h
       df = Polars::DataFrame.new({"x" => x, "h" => h})
-      df2 = df.group("h").sum("x").inner_join(df.group("h").count).sort_by { |r| r["h"] }
+      df2 = df.groupby("h").sum("x").inner_join(df.groupby("h").count).sort("h")
       xs = df2["sum_x"]
       ns = df2["count"]
       hs = df2["h"]
