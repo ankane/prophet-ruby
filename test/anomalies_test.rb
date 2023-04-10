@@ -22,11 +22,11 @@ class AnomaliesTest < Minitest::Test
     Prophet.anomalies(generate_series, country_holidays: "US")
   end
 
-  # TODO raise error in 0.4.0
   def test_country_holidays_unsupported
-    assert_output(nil, /Holidays in USA are not currently supported/) do
+    error = assert_raises(ArgumentError) do
       Prophet.anomalies(generate_series, country_holidays: "USA", verbose: true)
     end
+    assert_equal "Holidays in USA are not currently supported", error.message
   end
 
   # TODO improve test

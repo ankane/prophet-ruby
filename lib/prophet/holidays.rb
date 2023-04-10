@@ -4,9 +4,7 @@ module Prophet
       years = (1995..2045).to_a
       holiday_names = make_holidays_df(years, country)["holiday"].uniq
       if holiday_names.size == 0
-        # TODO raise error in 0.5.0
-        # raise ArgumentError, "Holidays in #{country} are not currently supported"
-        logger.warn "Holidays in #{country} are not currently supported"
+        raise ArgumentError, "Holidays in #{country} are not currently supported"
       end
       holiday_names
     end
