@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-      - run: pip install matplotlib prophet
+      - run: pip install matplotlib "pandas<2" prophet
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
