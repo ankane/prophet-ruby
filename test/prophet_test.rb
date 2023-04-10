@@ -175,8 +175,6 @@ class ProphetTest < Minitest::Test
   end
 
   def test_country_holidays_unsupported
-    skip # TODO uncomment in 0.5.0
-
     m = Prophet.new
     error = assert_raises(ArgumentError) do
       m.add_country_holidays("USA")
