@@ -1,6 +1,7 @@
-## 0.4.3 (unreleased)
+## 0.5.0 (unreleased)
 
 - Added support for Polars
+- Dropped support for Ruby < 2.7
 
 ## 0.4.2 (2022-07-12)
 

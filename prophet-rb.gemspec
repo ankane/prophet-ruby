@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.files         = Dir["*.{md,txt}", "{data-raw,lib,stan,vendor}/**/*"]
   spec.require_path  = "lib"
 
-  spec.required_ruby_version = ">= 2.7"
+  spec.required_ruby_version = ">= 3"
 
   spec.add_dependency "cmdstan", ">= 0.2"
   spec.add_dependency "numo-narray", ">= 0.9.1.7" # for percentile
