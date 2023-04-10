@@ -1,3 +1,7 @@
+## 0.4.3 (unreleased)
+
+- Added support for Polars
+
 ## 0.4.2 (2022-07-12)
 
 - Fixed warning with `add_country_holidays` method
