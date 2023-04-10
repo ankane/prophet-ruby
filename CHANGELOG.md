@@ -1,6 +1,7 @@
 ## 0.5.0 (unreleased)
 
 - Added support for Polars
+- Updated holidays
 - Changed warning to error for unsupported country holidays
 - Dropped support for Ruby < 2.7
 
