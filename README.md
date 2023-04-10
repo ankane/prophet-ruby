@@ -78,7 +78,7 @@ Prophet.anomalies(series, growth: "logistic", weekly_seasonality: false)
 
 ## Advanced API
 
-Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Rover](https://github.com/ankane/rover) for data frames.
+Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Polars Ruby](https://github.com/ankane/polars-ruby) for data frames.
 
 - [Quick Start](#advanced-quick-start)
 - [Plots](#plots)
@@ -99,7 +99,7 @@ Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/qu
 Create a data frame with `ds` and `y` columns - here’s [an example](examples/example_wp_log_peyton_manning.csv) you can use
 
 ```ruby
-df = Rover.read_csv("example_wp_log_peyton_manning.csv")
+df = Polars.read_csv("example_wp_log_peyton_manning.csv")
 df.head
 ```
 
@@ -175,7 +175,7 @@ m.plot_components(forecast).savefig("components.png")
 Forecast logistic growth instead of linear
 
 ```ruby
-df = Rover.read_csv("example_wp_log_R.csv")
+df = Polars.read_csv("example_wp_log_R.csv")
 df["cap"] = 8.5
 m = Prophet.new(growth: "logistic")
 m.fit(df)
@@ -227,7 +227,7 @@ m = Prophet.new(changepoints: ["2014-01-01"])
 Create a data frame with `holiday` and `ds` columns. Include all occurrences in your past data and future occurrences you’d like to forecast.
 
 ```ruby
-playoffs = Rover::DataFrame.new({
+playoffs = Polars::DataFrame.new({
   "holiday" => "playoff",
   "ds" => [
     "2008-01-13", "2009-01-03", "2010-01-16",
@@ -239,13 +239,13 @@ playoffs = Rover::DataFrame.new({
   "lower_window" => 0,
   "upper_window" => 1
 })
-superbowls = Rover::DataFrame.new({
+superbowls = Polars::DataFrame.new({
   "holiday" => "superbowl",
   "ds" => ["2010-02-07", "2014-02-02", "2016-02-07"],
   "lower_window" => 0,
   "upper_window" => 1
 })
-holidays = playoffs.concat(superbowls)
+holidays = playoffs.vstack(superbowls)
 
 m = Prophet.new(holidays: holidays)
 m.fit(df)
@@ -293,7 +293,7 @@ forecast = m.predict(future)
 Specify multiplicative seasonality
 
 ```ruby
-df = Rover.read_csv("example_air_passengers.csv")
+df = Polars.read_csv("example_air_passengers.csv", eol_char: "\r")
 m = Prophet.new(seasonality_mode: "multiplicative")
 m.fit(df)
 future = m.make_future_dataframe(periods: 50, freq: "MS")
@@ -331,7 +331,7 @@ Prophet.new(mcmc_samples: 300)
 Remove outliers
 
 ```ruby
-df = Rover.read_csv("example_wp_log_R_outliers1.csv")
+df = Polars.read_csv("example_wp_log_R_outliers1.csv")
 df["y"][(df["ds"] > "2010-01-01") & (df["ds"] < "2011-01-01")] = Float::NAN
 m = Prophet.new.fit(df)
 ```
@@ -343,7 +343,7 @@ m = Prophet.new.fit(df)
 Sub-daily data
 
 ```ruby
-df = Rover.read_csv("example_yosemite_temps.csv")
+df = Polars.read_csv("example_yosemite_temps.csv")
 m = Prophet.new(changepoint_prior_scale: 0.01).fit(df)
 future = m.make_future_dataframe(periods: 300, freq: "H")
 forecast = m.predict(future)
@@ -399,7 +399,7 @@ all_params.each do |params|
 end
 
 # Find the best parameters
-tuning_results = Rover::DataFrame.new(all_params)
+tuning_results = Polars::DataFrame.new(all_params)
 tuning_results["rmse"] = rmses
 p tuning_results
 ```
@@ -442,7 +442,7 @@ def stan_init(m)
   res
 end
 
-df = Rover.read_csv("example_wp_log_peyton_manning.csv")
+df = Polars.read_csv("example_wp_log_peyton_manning.csv")
 df1 = df[df["ds"] <= "2016-01-19"] # All data except the last day
 m1 = Prophet.new.fit(df1) # A model fit to all data except the last day
 
@@ -456,12 +456,9 @@ m2 = Prophet.new.fit(df, init: stan_init(m1)) # Adding the last day, warm-starti
 
 ## Upgrading
 
-### 0.2.0
+### 0.5.0
 
-Prophet now uses [Rover](https://github.com/ankane/rover) instead of Daru. Two changes you may need to make are:
-
-- `Rover.read_csv` instead of `Daru::DataFrame.from_csv`
-- `df[["ds", "yhat"]]` instead of `df["ds", "yhat"]`
+Prophet now uses [Polars](https://github.com/ankane/polars-ruby) instead of Rover.
 
 ## Credits
 

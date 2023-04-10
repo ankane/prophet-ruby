@@ -83,7 +83,7 @@ module Prophet
       predicts = cutoffs.map { |cutoff| single_cutoff_forecast(df, model, cutoff, horizon, predict_columns) }
 
       # Combine all predicted DataFrame into one DataFrame
-      predicts.reduce(Rover::DataFrame.new) { |memo, v| memo.concat(v) }
+      predicts.reduce(Polars::DataFrame.new) { |memo, v| memo.concat(v) }
     end
 
     def self.single_cutoff_forecast(df, model, cutoff, horizon, predict_columns)
@@ -109,7 +109,7 @@ module Prophet
       columns.concat(m.seasonalities.map { |_, props| props[:condition_name] }.compact)
       yhat = m.predict(df[index_predicted][columns])
       # Merge yhat(predicts), y(df, original data) and cutoff
-      yhat[predict_columns].merge(df[index_predicted][["y"]]).merge(Rover::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))
+      yhat[predict_columns].merge(df[index_predicted][["y"]]).merge(Polars::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))
     end
 
     def self.prophet_copy(m, cutoff = nil)
@@ -223,7 +223,7 @@ module Prophet
 
     def self.rolling_mean_by_h(x, h, w, name)
       # Aggregate over h
-      df = Rover::DataFrame.new({"x" => x, "h" => h})
+      df = Polars::DataFrame.new({"x" => x, "h" => h})
       df2 = df.group("h").sum("x").inner_join(df.group("h").count).sort_by { |r| r["h"] }
       xs = df2["sum_x"]
       ns = df2["count"]
@@ -254,12 +254,12 @@ module Prophet
       res_h = hs[(trailing_i + 1)..-1]
       res_x = res_x[(trailing_i + 1)..-1]
 
-      Rover::DataFrame.new({"horizon" => res_h, name => res_x})
+      Polars::DataFrame.new({"horizon" => res_h, name => res_x})
     end
 
     def self.rolling_median_by_h(x, h, w, name)
       # Aggregate over h
-      df = Rover::DataFrame.new({"x" => x, "h" => h})
+      df = Polars::DataFrame.new({"x" => x, "h" => h})
       grouped = df.group("h")
       df2 = grouped.count.sort_by { |r| r["h"] }
       hs = df2["h"]
@@ -284,18 +284,18 @@ module Prophet
           break
         end
         res_h << hs[i]
-        res_x << Rover::Vector.new(xs).median
+        res_x << Polars::Series.new(xs).median
         i -= 1
       end
       res_h.reverse!
       res_x.reverse!
-      Rover::DataFrame.new({"horizon" => res_h, name => res_x})
+      Polars::DataFrame.new({"horizon" => res_h, name => res_x})
     end
 
     def self.mse(df, w)
       se = (df["y"] - df["yhat"]) ** 2
       if w < 0
-        return Rover::DataFrame.new({"horizon" => df["horizon"], "mse" => se})
+        return Polars::DataFrame.new({"horizon" => df["horizon"], "mse" => se})
       end
       rolling_mean_by_h(se, df["horizon"], w, "mse")
     end
@@ -309,7 +309,7 @@ module Prophet
     def self.mae(df, w)
       ae = (df["y"] - df["yhat"]).abs
       if w < 0
-        return Rover::DataFrame.new({"horizon" => df["horizon"], "mae" => ae})
+        return Polars::DataFrame.new({"horizon" => df["horizon"], "mae" => ae})
       end
       rolling_mean_by_h(ae, df["horizon"], w, "mae")
     end
@@ -317,7 +317,7 @@ module Prophet
     def self.mape(df, w)
       ape = ((df["y"] - df["yhat"]) / df["y"]).abs
       if w < 0
-        return Rover::DataFrame.new({"horizon" => df["horizon"], "mape" => ape})
+        return Polars::DataFrame.new({"horizon" => df["horizon"], "mape" => ape})
       end
       rolling_mean_by_h(ape, df["horizon"], w, "mape")
     end
@@ -325,7 +325,7 @@ module Prophet
     def self.mdape(df, w)
       ape = ((df["y"] - df["yhat"]) / df["y"]).abs
       if w < 0
-        return Rover::DataFrame.new({"horizon" => df["horizon"], "mdape" => ape})
+        return Polars::DataFrame.new({"horizon" => df["horizon"], "mdape" => ape})
       end
       rolling_median_by_h(ape, df["horizon"], w, "mdape")
     end
@@ -333,7 +333,7 @@ module Prophet
     def self.smape(df, w)
       sape = (df["y"] - df["yhat"]).abs / ((df["y"].abs + df["yhat"].abs) / 2)
       if w < 0
-        return Rover::DataFrame.new({"horizon" => df["horizon"], "smape" => sape})
+        return Polars::DataFrame.new({"horizon" => df["horizon"], "smape" => sape})
       end
       rolling_mean_by_h(sape, df["horizon"], w, "smape")
     end
@@ -341,7 +341,7 @@ module Prophet
     def self.coverage(df, w)
       is_covered = (df["y"] >= df["yhat_lower"]) & (df["y"] <= df["yhat_upper"])
       if w < 0
-        return Rover::DataFrame.new({"horizon" => df["horizon"], "coverage" => is_covered})
+        return Polars::DataFrame.new({"horizon" => df["horizon"], "coverage" => is_covered})
       end
       rolling_mean_by_h(is_covered.to(:float), df["horizon"], w, "coverage")
     end

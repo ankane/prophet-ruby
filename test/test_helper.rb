@@ -21,7 +21,7 @@ class Minitest::Test
   end
 
   def load_example
-    Rover.read_csv("examples/example_wp_log_peyton_manning.csv")
+    Polars.read_csv("examples/example_wp_log_peyton_manning.csv")
   end
 
   def test_python?

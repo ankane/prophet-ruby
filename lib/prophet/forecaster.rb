@@ -89,7 +89,7 @@ module Prophet
         raise ArgumentError, "Parameter \"changepoint_range\" must be in [0, 1]"
       end
       if @holidays
-        if !(@holidays.is_a?(Rover::DataFrame) && @holidays.include?("ds") && @holidays.include?("holiday"))
+        if !(@holidays.is_a?(Polars::DataFrame) && @holidays.include?("ds") && @holidays.include?("holiday"))
           raise ArgumentError, "holidays must be a DataFrame with \"ds\" and \"holiday\" columns."
         end
         @holidays["ds"] = to_datetime(@holidays["ds"])
@@ -179,7 +179,7 @@ module Prophet
         end
       end
 
-      df = df.sort_by { |r| r["ds"] }
+      df = df.sort("ds")
 
       initialize_scales(initialize_scales, df)
 
@@ -195,13 +195,13 @@ module Prophet
         unless df.include?("cap")
           raise ArgumentError, "Capacities must be supplied for logistic growth in column \"cap\""
         end
-        if df[df["cap"] <= df["floor"]].size > 0
+        if (df["cap"] <= df["floor"]).any?
           raise ArgumentError, "cap must be greater than floor (which defaults to 0)."
         end
         df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale.to_f
       end
 
-      df["t"] = (df["ds"] - @start) / @t_scale.to_f
+      df["t"] = (df["ds"] - @start) / @t_scale.to_f / 1e9
       if df.include?("y")
         df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale.to_f
       end
@@ -248,7 +248,7 @@ module Prophet
         if @n_changepoints > 0
           step = (hist_size - 1) / @n_changepoints.to_f
           cp_indexes = (@n_changepoints + 1).times.map { |i| (i * step).round }
-          @changepoints = Rover::Vector.new(@history["ds"].to_a.values_at(*cp_indexes)).tail(-1)
+          @changepoints = Polars::Series.new(@history["ds"].to_a.values_at(*cp_indexes))[1..-1]
         else
           @changepoints = []
         end
@@ -274,29 +274,29 @@ module Prophet
 
     def make_seasonality_features(dates, period, series_order, prefix)
       features = fourier_series(dates, period, series_order)
-      Rover::DataFrame.new(features.map.with_index { |v, i| ["#{prefix}_delim_#{i + 1}", v] }.to_h)
+      Polars::DataFrame.new(features.map.with_index { |v, i| ["#{prefix}_delim_#{i + 1}", v] }.to_h)
     end
 
     def construct_holiday_dataframe(dates)
-      all_holidays = Rover::DataFrame.new
+      all_holidays = Polars::DataFrame.new
       if @holidays
         all_holidays = @holidays.dup
       end
       if @country_holidays
         year_list = dates.map(&:year)
         country_holidays_df = make_holidays_df(year_list, @country_holidays)
-        all_holidays = all_holidays.concat(country_holidays_df)
+        all_holidays = all_holidays.vstack(country_holidays_df)
       end
       # Drop future holidays not previously seen in training data
       if @train_holiday_names
         # Remove holiday names didn't show up in fit
-        all_holidays = all_holidays[all_holidays["holiday"].in?(@train_holiday_names)]
+        all_holidays = all_holidays[Polars.col("holiday").is_in(@train_holiday_names)]
 
         # Add holiday names in fit but not in predict with ds as NA
-        holidays_to_add = Rover::DataFrame.new({
-          "holiday" => @train_holiday_names[!@train_holiday_names.in?(all_holidays["holiday"])]
+        holidays_to_add = Polars::DataFrame.new({
+          "holiday" => @train_holiday_names.filter(@train_holiday_names.is_in(all_holidays["holiday"])._not)
         })
-        all_holidays = all_holidays.concat(holidays_to_add)
+        all_holidays = all_holidays.vstack(holidays_to_add)
       end
 
       all_holidays
@@ -309,7 +309,7 @@ module Prophet
       # Strip to just dates.
       row_index = dates.map(&:to_date)
 
-      holidays.each_row do |row|
+      holidays.iter_rows(named: true) do |row|
         dt = row["ds"]
         lw = nil
         uw = nil
@@ -338,14 +338,14 @@ module Prophet
           end
         end
       end
-      holiday_features = Rover::DataFrame.new(expanded_holidays)
+      holiday_features = Polars::DataFrame.new(expanded_holidays)
       # Make sure column order is consistent
-      holiday_features = holiday_features[holiday_features.vector_names.sort]
-      prior_scale_list = holiday_features.vector_names.map { |h| prior_scales[h.split("_delim_")[0]] }
+      holiday_features = holiday_features[holiday_features.columns.sort]
+      prior_scale_list = holiday_features.columns.map { |h| prior_scales[h.split("_delim_")[0]] }
       holiday_names = prior_scales.keys
       # Store holiday names used in fit
       if @train_holiday_names.nil?
-        @train_holiday_names = Rover::Vector.new(holiday_names)
+        @train_holiday_names = Polars::Series.new(holiday_names)
       end
       [holiday_features, prior_scale_list, holiday_names]
     end
@@ -451,14 +451,14 @@ module Prophet
 
       # Additional regressors
       @extra_regressors.each do |name, props|
-        seasonal_features << Rover::DataFrame.new({name => df[name]})
+        seasonal_features << Polars::DataFrame.new({name => df[name]})
         prior_scales << props[:prior_scale]
         modes[props[:mode]] << name
       end
 
       # Dummy to prevent empty X
       if seasonal_features.size == 0
-        seasonal_features << Rover::DataFrame.new({"zeros" => [0] * df.shape[0]})
+        seasonal_features << Polars::DataFrame.new({"zeros" => [0] * df.shape[0]})
         prior_scales << 1.0
       end
 
@@ -470,10 +470,10 @@ module Prophet
     end
 
     def regressor_column_matrix(seasonal_features, modes)
-      components = Rover::DataFrame.new(
+      components = Polars::DataFrame.new({
         "col" => seasonal_features.shape[1].times.to_a,
-        "component" => seasonal_features.vector_names.map { |x| x.split("_delim_")[0] }
-      )
+        "component" => seasonal_features.columns.map { |x| x.split("_delim_")[0] }
+      })
 
       # Add total for holidays
       if @train_holiday_names
@@ -493,8 +493,14 @@ module Prophet
       # After all of the additive/multiplicative groups have been added,
       modes[@seasonality_mode] << "holidays"
       # Convert to a binary matrix
-      component_cols = components["col"].crosstab(components["component"])
-      component_cols["col"] = component_cols.delete("_")
+      component_cols =
+        components.pivot(
+          values: "component",
+          index: "col",
+          columns: "component",
+          aggregate_fn: "count",
+          sort_columns: "col"
+        ).fill_null(0)
 
       # Add columns for additive and multiplicative terms, if missing
       ["additive_terms", "multiplicative_terms"].each do |name|
@@ -507,11 +513,11 @@ module Prophet
     end
 
     def add_group_component(components, name, group)
-      new_comp = components[components["component"].in?(group)].dup
+      new_comp = components[Polars.col("component").is_in(group)]
       group_cols = new_comp["col"].uniq
       if group_cols.size > 0
-        new_comp = Rover::DataFrame.new({"col" => group_cols, "component" => name})
-        components = components.concat(new_comp)
+        new_comp = Polars::DataFrame.new({"col" => group_cols}).with_column(Polars.lit(name).alias("component"))
+        components = components.vstack(new_comp)
       end
       components
     end
@@ -541,7 +547,7 @@ module Prophet
       first = @history["ds"].min
       last = @history["ds"].max
       dt = @history["ds"].diff
-      min_dt = dt.min
+      min_dt = dt.cast(Polars::Int64).min / 1e9
 
       days = 86400
 
@@ -632,13 +638,13 @@ module Prophet
       raise Error, "Prophet object can only be fit once" if @history
 
       df = convert_df(df)
-      raise ArgumentError, "Must be a data frame" unless df.is_a?(Rover::DataFrame)
+      raise ArgumentError, "Must be a data frame" unless df.is_a?(Polars::DataFrame)
 
       unless df.include?("ds") && df.include?("y")
         raise ArgumentError, "Data frame must have ds and y columns"
       end
 
-      history = df[!df["y"].missing]
+      history = df.drop_nulls(subset: ["y"])
       raise Error, "Data has less than 2 non-nil rows" if history.size < 2
 
       @history_dates = to_datetime(df["ds"]).sort
@@ -806,7 +812,7 @@ module Prophet
 
       x = seasonal_features.to_numo
       data = {}
-      component_cols.vector_names.each do |component|
+      component_cols.columns.each do |component|
         beta_c =  @params["beta"] * component_cols[component].to_numo
 
         comp = x.dot(beta_c.transpose)
@@ -819,7 +825,7 @@ module Prophet
           data["#{component}_upper"] = comp.percentile(upper_p, axis: 1)
         end
       end
-      Rover::DataFrame.new(data)
+      Polars::DataFrame.new(data)
     end
 
     def sample_posterior_predictive(df)
@@ -873,7 +879,7 @@ module Prophet
         series["#{key}_upper"] = sim_values[key].percentile(upper_p, axis: 1)
       end
 
-      Rover::DataFrame.new(series)
+      Polars::DataFrame.new(series)
     end
 
     def sample_model(df, seasonal_features, iteration, s_a, s_m)
@@ -980,7 +986,7 @@ module Prophet
       dates.select! { |d| d > last_date }
       dates = dates.last(periods)
       dates = @history_dates.to_numo.concatenate(Numo::NArray.cast(dates)) if include_history
-      Rover::DataFrame.new({"ds" => dates})
+      Polars::DataFrame.new({"ds" => dates})
     end
 
     def to_json
@@ -993,9 +999,9 @@ module Prophet
 
     def convert_df(df)
       if defined?(Daru::DataFrame) && df.is_a?(Daru::DataFrame)
-        Rover::DataFrame.new(df.to_h)
-      elsif defined?(Polars::DataFrame) && df.is_a?(Polars::DataFrame)
-        Rover::DataFrame.new(df.to_h(as_series: false))
+        Polars::DataFrame.new(df.to_h.transform_values(&:to_a))
+      elsif defined?(Rover::DataFrame) && df.is_a?(Rover::DataFrame)
+        Polars::DataFrame.new(df.to_h)
       else
         df
       end
@@ -1017,15 +1023,12 @@ module Prophet
             DateTime.parse(v.to_s).to_time.utc
           end
         end
-      Rover::Vector.new(vec)
+      Polars::Series.new(vec)
     end
 
     # okay to do in-place
     def df_concat_axis_one(dfs)
-      dfs[1..-1].each do |df|
-        dfs[0].merge!(df)
-      end
-      dfs[0]
+      Polars.concat(dfs, how: "horizontal")
     end
 
     # https://en.wikipedia.org/wiki/Poisson_distribution#Generating_Poisson-distributed_random_variables
@@ -1104,21 +1107,20 @@ module Prophet
           v = instance_variable_get("@#{attribute}")
 
           v = v.dup
-          v["ds"] = v["ds"].map { |v| v.iso8601(3) } if v["ds"]
-          v.delete("col")
+          v["ds"] = v["ds"].map { |v| v.iso8601(3) } if v.include?("ds")
+          v.drop_in_place("col") if v.include?("col")
 
           fields =
-            v.types.map do |k, t|
+            v.get_columns.map do |v|
               type =
-                case t
-                when :object
+                if v.datelike?
                   "datetime"
-                when :int64
+                elsif v.numeric? && !v.float?
                   "integer"
                 else
                   "number"
                 end
-              {"name" => k, "type" => type}
+              {"name" => v.name, "type" => type}
             end
 
           d = {
@@ -1180,7 +1182,7 @@ module Prophet
           model.instance_variable_set("@#{attribute}", nil)
         else
           d = JSON.parse(model_dict.fetch(attribute))
-          s = Rover::Vector.new(d["data"])
+          s = Polars::Series.new(d["data"])
           if d["name"] == "ds"
             s = s.map { |v| Time.parse(v).utc }
           end
@@ -1198,8 +1200,8 @@ module Prophet
           model.instance_variable_set("@#{attribute}", nil)
         else
           d = JSON.parse(model_dict.fetch(attribute))
-          df = Rover::DataFrame.new(d["data"])
-          df["ds"] = df["ds"].map { |v| Time.parse(v).utc } if df["ds"]
+          df = Polars::DataFrame.new(d["data"])
+          df["ds"] = df["ds"].map { |v| Time.parse(v).utc } if df.include?("ds")
           if attribute == "train_component_cols"
             # Special handling because of named index column
             # df.columns.name = 'component'

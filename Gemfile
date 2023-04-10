@@ -13,3 +13,5 @@ gem "tzinfo-data"
 
 # for profiling
 # gem "ruby-prof"
+
+gem "polars-df", github: "ankane/polars-ruby"

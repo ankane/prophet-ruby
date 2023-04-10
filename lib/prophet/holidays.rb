@@ -10,14 +10,14 @@ module Prophet
     end
 
     def make_holidays_df(year_list, country)
-      holidays_df[(holidays_df["country"] == country) & (holidays_df["year"].in?(year_list))][["ds", "holiday"]]
+      holidays_df[(Polars.col("country") == country) & (Polars.col("year").is_in(year_list))][["ds", "holiday"]]
     end
 
     # TODO improve performance
     def holidays_df
       @holidays_df ||= begin
         holidays_file = File.expand_path("../../data-raw/generated_holidays.csv", __dir__)
-        Rover.read_csv(holidays_file, converters: [:date, :numeric])
+        Polars.read_csv(holidays_file, dtypes: {"ds" => Polars::Date})
       end
     end
   end
