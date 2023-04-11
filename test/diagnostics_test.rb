@@ -32,7 +32,9 @@ class DiagnosticsTest < Minitest::Test
     # assert_elements_in_delta [0.703386, 0.707475], df_p["rmse"].head(2), 0.001
     # assert_elements_in_delta [1.084211, 1.090105], df_p["rmse"].tail(2), 0.001
 
-    Prophet::Plot.plot_cross_validation_metric(df_cv, metric: "mape").savefig("/tmp/cross_validation_mape.png")
+    if test_python?
+      Prophet::Plot.plot_cross_validation_metric(df_cv, metric: "mape").savefig("/tmp/cross_validation_mape.png")
+    end
   end
 
   def test_cross_validation_cutoffs
