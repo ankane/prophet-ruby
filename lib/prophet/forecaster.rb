@@ -75,6 +75,7 @@ module Prophet
       validate_inputs
 
       @logger = ::Logger.new($stderr)
+      @logger.level = ::Logger::WARN
       @logger.formatter = proc do |severity, datetime, progname, msg|
         "[prophet] #{msg}\n"
       end

@@ -68,7 +68,7 @@ module Prophet
     df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
     df["cap"] = cap if cap
 
-    m.logger.level = ::Logger::FATAL unless verbose
+    m.logger.level = verbose ? ::Logger::INFO : ::Logger::FATAL
     m.add_country_holidays(country_holidays) if country_holidays
     m.fit(df)
 
@@ -97,7 +97,7 @@ module Prophet
     df["cap"] = cap if cap
 
     m = Prophet.new(interval_width: interval_width, **options)
-    m.logger.level = ::Logger::FATAL unless verbose
+    m.logger.level = verbose ? ::Logger::INFO : ::Logger::FATAL
     m.add_country_holidays(country_holidays) if country_holidays
     m.fit(df)
 

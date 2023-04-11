@@ -3,6 +3,7 @@
 - Added support for Polars
 - Updated holidays
 - Changed warning to error for unsupported country holidays
+- Disabled logging by default
 - Dropped support for Ruby < 3
 
 ## 0.4.2 (2022-07-12)
