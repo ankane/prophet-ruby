@@ -5,4 +5,4 @@ with open('/tmp/model.json', 'r') as fin:
 
 future = m.make_future_dataframe(periods=365)
 forecast = m.predict(future)
-print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
+# print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
