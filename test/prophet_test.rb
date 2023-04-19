@@ -338,7 +338,7 @@ class ProphetTest < Minitest::Test
 
   def test_infinity
     df = load_example
-    df["y"][0] = Float::INFINITY
+    df[0, "y"] = Float::INFINITY
     m = Prophet.new
     error = assert_raises(ArgumentError) do
       m.fit(df)
