@@ -202,7 +202,7 @@ module Prophet
         df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale.to_f
       end
 
-      df["t"] = (df["ds"] - @start) / @t_scale.to_f / 1e9
+      df["t"] = (df["ds"] - @start).cast(Polars::Int64) / 1000000000 / @t_scale.to_f
       if df.include?("y")
         df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale.to_f
       end
@@ -548,7 +548,7 @@ module Prophet
       first = @history["ds"].min
       last = @history["ds"].max
       dt = @history["ds"].diff
-      min_dt = dt.cast(Polars::Int64).min / 1e9
+      min_dt = dt.cast(Polars::Int64).min / 1000000000
 
       days = 86400
 
