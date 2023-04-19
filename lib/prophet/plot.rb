@@ -35,7 +35,6 @@ module Prophet
       components = ["trend"]
       if @train_holiday_names && fcst.include?("holidays")
         components << "holidays"
-        raise "todo"
       end
       # Plot weekly seasonality, if present
       if @seasonalities["weekly"] && fcst.include?("weekly")

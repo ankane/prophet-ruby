@@ -298,7 +298,10 @@ module Prophet
           "ds" => nil,
           "holiday" => @train_holiday_names.filter(@train_holiday_names.is_in(all_holidays["holiday"])._not)
         })
-        all_holidays = all_holidays.vstack(holidays_to_add) if holidays_to_add.size > 0
+        if holidays_to_add.size > 0
+          holidays_to_add["ds"] = holidays_to_add["ds"].cast(Polars::Date)
+          all_holidays = all_holidays.vstack(holidays_to_add)
+        end
       end
 
       all_holidays
