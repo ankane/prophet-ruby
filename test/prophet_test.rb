@@ -41,7 +41,7 @@ class ProphetTest < Minitest::Test
   end
 
   def test_logistic
-    df = Rover.read_csv("examples/example_wp_log_R.csv")
+    df = Polars.read_csv("examples/example_wp_log_R.csv")
     df["cap"] = 8.5
 
     m = Prophet.new(growth: "logistic")
@@ -66,7 +66,7 @@ class ProphetTest < Minitest::Test
   end
 
   def test_logistic_floor
-    df = Rover.read_csv("examples/example_wp_log_R.csv")
+    df = Polars.read_csv("examples/example_wp_log_R.csv")
     df["y"] = 10 - df["y"]
     df["cap"] = 6
     df["floor"] = 1.5
@@ -123,7 +123,7 @@ class ProphetTest < Minitest::Test
   def test_holidays
     df = load_example
 
-    playoffs = Rover::DataFrame.new({
+    playoffs = Polars::DataFrame.new({
       "holiday" => "playoff",
       "ds" => [
         "2008-01-13", "2009-01-03", "2010-01-16",
@@ -135,13 +135,13 @@ class ProphetTest < Minitest::Test
       "lower_window" => 0,
       "upper_window" => 1
     })
-    superbowls = Rover::DataFrame.new({
+    superbowls = Polars::DataFrame.new({
       "holiday" => "superbowl",
       "ds" => ["2010-02-07", "2014-02-02", "2016-02-07"],
       "lower_window" => 0,
       "upper_window" => 1
     })
-    holidays = playoffs.concat(superbowls)
+    holidays = playoffs.vstack(superbowls)
 
     m = Prophet.new(holidays: holidays)
     m.fit(df)
@@ -233,7 +233,7 @@ class ProphetTest < Minitest::Test
   end
 
   def test_multiplicative_seasonality
-    df = Rover.read_csv("examples/example_air_passengers.csv")
+    df = Polars.read_csv("examples/example_air_passengers.csv", eol_char: "\r")
     m = Prophet.new(seasonality_mode: "multiplicative")
     m.fit(df, seed: 123)
     future = m.make_future_dataframe(periods: 50, freq: "MS")
@@ -246,7 +246,7 @@ class ProphetTest < Minitest::Test
   end
 
   def test_override_seasonality_mode
-    df = Rover.read_csv("examples/example_air_passengers.csv")
+    df = Polars.read_csv("examples/example_air_passengers.csv", eol_char: "\r")
 
     m = Prophet.new(seasonality_mode: "multiplicative")
     m.add_seasonality(name: "quarterly", period: 91.25, fourier_order: 8, mode: "additive")
@@ -260,8 +260,7 @@ class ProphetTest < Minitest::Test
   end
 
   def test_subdaily
-    df = Rover.read_csv("examples/example_yosemite_temps.csv")
-    df["y"][df["y"] == "NaN"] = nil
+    df = Polars.read_csv("examples/example_yosemite_temps.csv", null_values: "NaN")
 
     m = Prophet.new(changepoint_prior_scale: 0.01)
     m.fit(df, seed: 123)
@@ -349,7 +348,7 @@ class ProphetTest < Minitest::Test
 
   def test_missing_columns
     df = load_example
-    df.delete("y")
+    df.drop_in_place("y")
     m = Prophet.new
     error = assert_raises(ArgumentError) do
       m.fit(df)
@@ -359,7 +358,7 @@ class ProphetTest < Minitest::Test
 
   def test_updating_fitted_model
     df = load_example
-    df1 = df[df["ds"] <= "2016-01-19"] # All data except the last day
+    df1 = df[Polars.col("ds") <= "2016-01-19"] # All data except the last day
     m1 = Prophet.new.fit(df1) # A model fit to all data except the last day
 
     m2 = Prophet.new.fit(df) # Adding the last day, fitting from scratch
@@ -367,7 +366,7 @@ class ProphetTest < Minitest::Test
   end
 
   def test_outliers
-    df = Rover.read_csv("examples/example_wp_log_R_outliers1.csv")
+    df = Polars.read_csv("examples/example_wp_log_R_outliers1.csv")
     df["y"][(df["ds"] > "2010-01-01") & (df["ds"] < "2011-01-01")] = Float::NAN
     m = Prophet.new.fit(df)
     future = m.make_future_dataframe(periods: 1096)

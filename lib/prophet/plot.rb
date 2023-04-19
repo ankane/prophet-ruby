@@ -210,7 +210,7 @@ module Prophet
           df_dict[props[:condition_name]] = true
         end
       end
-      df = Rover::DataFrame.new(df_dict)
+      df = Polars::DataFrame.new(df_dict)
       df = setup_dataframe(df)
       df
     end

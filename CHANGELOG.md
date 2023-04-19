@@ -1,6 +1,6 @@
 ## 0.5.0 (unreleased)
 
-- Added support for Polars
+- Switched from Rover to Polars
 - Updated holidays
 - Changed warning to error for unsupported country holidays
 - Disabled logging by default

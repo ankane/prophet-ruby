@@ -1,7 +1,7 @@
 # dependencies
 require "cmdstan"
 require "numo/narray"
-require "rover"
+require "polars-df"
 
 # stdlib
 require "logger"
@@ -54,7 +54,7 @@ module Prophet
       elsif day
         "D"
       else
-        diff = Rover::Vector.new(times).sort.diff.to_numo[1..-1]
+        diff = (Polars::Series.new(times).sort.diff.cast(Polars::Int64) / 1_000_000_000).to_numo[1..-1]
         min_diff = diff.min.to_i
 
         # could be another common divisor
@@ -65,7 +65,7 @@ module Prophet
       end
 
     # use series, not times, so dates are handled correctly
-    df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
+    df = Polars::DataFrame.new({"ds" => series.keys, "y" => series.values})
     df["cap"] = cap if cap
 
     m.logger.level = verbose ? ::Logger::INFO : ::Logger::FATAL
@@ -87,13 +87,13 @@ module Prophet
     else
       result.each { |v| v["ds"] = v["ds"].localtime }
     end
-    result.map { |v| [v["ds"], v["yhat"]] }.to_h
+    result.to_h { |v| [v["ds"], v["yhat"]] }
   end
 
   # TODO better name for interval_width
   # TODO DRY with forecast method
   def self.anomalies(series, interval_width: 0.99, country_holidays: nil, cap: nil, verbose: false, **options)
-    df = Rover::DataFrame.new({"ds" => series.keys, "y" => series.values})
+    df = Polars::DataFrame.new({"ds" => series.keys, "y" => series.values})
     df["cap"] = cap if cap
 
     m = Prophet.new(interval_width: interval_width, **options)
@@ -103,7 +103,7 @@ module Prophet
 
     forecast = m.predict(df)
     # filter df["ds"] to ensure dates/times in same format as input
-    df["ds"][(df["y"] < forecast["yhat_lower"]) | (df["y"] > forecast["yhat_upper"])].to_a
+    df[(Polars.col("y") < forecast["yhat_lower"]) | (Polars.col("y") > forecast["yhat_upper"])]["ds"].to_a
   end
 
   def self.from_json(model_json)

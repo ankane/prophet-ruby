@@ -1,7 +1,7 @@
 import pandas as pd
 from prophet import Prophet
 
-# float_precision='high' required for pd.read_csv to match precision of Rover.read_csv
+# float_precision='high' required for pd.read_csv to match precision of Polars.read_csv
 df = pd.read_csv('examples/example_wp_log_R_outliers1.csv', float_precision='high')
 
 m = Prophet()
