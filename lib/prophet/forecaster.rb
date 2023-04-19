@@ -1105,7 +1105,7 @@ module Prophet
           v = instance_variable_get("@#{attribute}")
 
           v = v.dup
-          v["ds"] = v["ds"].map { |v| v.iso8601(3) } if v["ds"]
+          v["ds"] = v["ds"].map { |v| v.iso8601(3).chomp("Z") } if v["ds"]
           v.delete("col")
 
           fields =
@@ -1125,7 +1125,7 @@ module Prophet
           d = {
             "schema" => {
               "fields" => fields,
-              "pandas_version" => "0.20.0"
+              "pandas_version" => "1.4.0"
             },
             "data" => v.to_a
           }
@@ -1160,8 +1160,7 @@ module Prophet
       # Params (Dict[str, np.ndarray])
       model_dict["params"] = params.transform_values(&:to_a)
       # Attributes that are skipped: stan_fit, stan_backend
-      # Returns 1.0 for Prophet 1.1
-      model_dict["__prophet_version"] = "1.0"
+      model_dict["__prophet_version"] = "1.1.2"
       model_dict
     end
 
@@ -1183,7 +1182,7 @@ module Prophet
           d = JSON.parse(model_dict.fetch(attribute))
           s = Rover::Vector.new(d["data"])
           if d["name"] == "ds"
-            s = s.map { |v| Time.parse(v).utc }
+            s = s.map { |v| DateTime.parse(v).to_time.utc }
           end
           model.instance_variable_set("@#{attribute}", s)
         end
@@ -1200,7 +1199,7 @@ module Prophet
         else
           d = JSON.parse(model_dict.fetch(attribute))
           df = Rover::DataFrame.new(d["data"])
-          df["ds"] = df["ds"].map { |v| Time.parse(v).utc } if df["ds"]
+          df["ds"] = df["ds"].map { |v| DateTime.parse(v).to_time.utc } if df["ds"]
           if attribute == "train_component_cols"
             # Special handling because of named index column
             # df.columns.name = 'component'
