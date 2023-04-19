@@ -180,7 +180,7 @@ module Prophet
         metrics = valid_metrics
       end
       if (!df.include?("yhat_lower") || !df.include?("yhat_upper")) && metrics.include?("coverage")
-        metrics.delete("coverage")
+        metrics.drop_in_place("coverage")
       end
       if metrics.uniq.length != metrics.length
         raise ArgumentError, "Input metrics must be a list of unique values"
@@ -195,10 +195,10 @@ module Prophet
       else
         df_m["horizon"] = df_m["ds"] - df_m["cutoff"]
       end
-      df_m.sort("horizon")
+      df_m = df_m.sort("horizon")
       if metrics.include?("mape") && df_m["y"].abs.min < 1e-8
         # logger.info("Skipping MAPE because y close to 0")
-        metrics.delete("mape")
+        metrics.drop_in_place("mape")
       end
       if metrics.length == 0
         return nil
@@ -224,8 +224,8 @@ module Prophet
     def self.rolling_mean_by_h(x, h, w, name)
       # Aggregate over h
       df = Polars::DataFrame.new({"x" => x, "h" => h})
-      df2 = df.groupby("h").sum("x").inner_join(df.groupby("h").count).sort("h")
-      xs = df2["sum_x"]
+      df2 = df.groupby("h").agg([Polars.sum("x"), Polars.count]).sort("h")
+      xs = df2["x"]
       ns = df2["count"]
       hs = df2["h"]
 
@@ -258,10 +258,13 @@ module Prophet
     end
 
     def self.rolling_median_by_h(x, h, w, name)
+      # TODO remove
+      h = h.cast(Polars::Int64)
+
       # Aggregate over h
       df = Polars::DataFrame.new({"x" => x, "h" => h})
-      grouped = df.group("h")
-      df2 = grouped.count.sort_by { |r| r["h"] }
+      grouped = df.groupby("h")
+      df2 = grouped.count.sort("h")
       hs = df2["h"]
 
       res_h = []
@@ -270,7 +273,7 @@ module Prophet
       i = hs.length - 1
       while i >= 0
         h_i = hs[i]
-        xs = df[df["h"] == h_i]["x"].to_a
+        xs = df.filter(df["h"] == h_i)["x"].to_a
 
         next_idx_to_add = (h == h_i).to_numo.cast_to(Numo::UInt8).argmax - 1
         while xs.length < w && next_idx_to_add >= 0
@@ -289,7 +292,10 @@ module Prophet
       end
       res_h.reverse!
       res_x.reverse!
-      Polars::DataFrame.new({"horizon" => res_h, name => res_x})
+      r = Polars::DataFrame.new({"horizon" => res_h, name => res_x})
+      # TODO remove
+      r["horizon"] = r["horizon"].cast(Polars::Duration)
+      r
     end
 
     def self.mse(df, w)
@@ -302,7 +308,8 @@ module Prophet
 
     def self.rmse(df, w)
       res = mse(df, w)
-      res["rmse"] = res.delete("mse").map { |v| Math.sqrt(v) }
+      res["rmse"] = res["mse"].sqrt
+      res.drop_in_place("mse")
       res
     end
 
@@ -343,7 +350,7 @@ module Prophet
       if w < 0
         return Polars::DataFrame.new({"horizon" => df["horizon"], "coverage" => is_covered})
       end
-      rolling_mean_by_h(is_covered.to(:float), df["horizon"], w, "coverage")
+      rolling_mean_by_h(is_covered.cast(Polars::Float64), df["horizon"], w, "coverage")
     end
   end
 end
