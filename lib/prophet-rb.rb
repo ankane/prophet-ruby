@@ -1,1 +1,1 @@
-require "prophet"
+require_relative "prophet"
