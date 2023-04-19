@@ -1089,7 +1089,7 @@ module Prophet
           d = {
             "name" => "ds",
             "index" => v.size.times.to_a,
-            "data" => v.to_a.map { |v| v.iso8601(3) }
+            "data" => v.to_a.map { |v| v.iso8601(3).chomp("Z") }
           }
           model_dict[attribute] = JSON.generate(d)
         end
@@ -1108,7 +1108,6 @@ module Prophet
           v = instance_variable_get("@#{attribute}")
 
           v = v.dup
-          v["ds"] = v["ds"].map { |v| v.iso8601(3).chomp("Z") } if v.include?("ds")
           v.drop_in_place("col") if v.include?("col")
 
           fields =
@@ -1123,6 +1122,8 @@ module Prophet
                 end
               {"name" => v.name, "type" => type}
             end
+
+          v["ds"] = v["ds"].map { |v| v.iso8601(3).chomp("Z") } if v.include?("ds")
 
           d = {
             "schema" => {
