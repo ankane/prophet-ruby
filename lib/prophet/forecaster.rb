@@ -1014,9 +1014,8 @@ module Prophet
     # and so days have equal length (no DST)
     def to_datetime(vec)
       return if vec.nil?
-      vec = vec.to_a if vec.dtype == Polars::Object
       vec =
-        vec.map do |v|
+        vec.to_a.map do |v|
           case v
           when Time
             v.utc
