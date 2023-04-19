@@ -395,7 +395,11 @@ class ProphetTest < Minitest::Test
     fig.savefig("/tmp/#{name}.png")
     m.add_changepoints_to_plot(fig.gca, forecast)
     fig.savefig("/tmp/#{name}2.png")
-    m.plot_components(forecast).savefig("/tmp/#{name}3.png")
+    Matplotlib::Pyplot.close(fig)
+
+    fig2 = m.plot_components(forecast)
+    fig2.savefig("/tmp/#{name}3.png")
+    Matplotlib::Pyplot.close(fig2)
   end
 
   def mac?
