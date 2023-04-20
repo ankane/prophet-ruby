@@ -521,7 +521,7 @@ module Prophet
       new_comp = components[Polars.col("component").is_in(group)]
       group_cols = new_comp["col"].uniq
       if group_cols.size > 0
-        new_comp = Polars::DataFrame.new({"col" => group_cols}).with_column(Polars.lit(name).alias("component"))
+        new_comp = Polars::DataFrame.new({"col" => group_cols, "component" => name})
         components = components.vstack(new_comp)
       end
       components
