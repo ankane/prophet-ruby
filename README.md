@@ -78,7 +78,7 @@ Prophet.anomalies(series, growth: "logistic", weekly_seasonality: false)
 
 ## Advanced API
 
-Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Polars Ruby](https://github.com/ankane/polars-ruby) for data frames.
+Check out the [Prophet documentation](https://facebook.github.io/prophet/docs/quick_start.html) for a great explanation of all of the features. The advanced API follows the Python API and supports the same features. It uses [Polars](https://github.com/ankane/polars-ruby) for data frames.
 
 - [Quick Start](#advanced-quick-start)
 - [Plots](#plots)

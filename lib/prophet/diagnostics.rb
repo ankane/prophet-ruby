@@ -90,8 +90,8 @@ module Prophet
       # Generate new object with copying fitting options
       m = prophet_copy(model, cutoff)
       # Train model
-      history_c = df.filter(df["ds"] <= cutoff)
-      if history_c.height < 2
+      history_c = df[df["ds"] <= cutoff]
+      if history_c.shape[0] < 2
         raise Error, "Less than two datapoints before cutoff. Increase initial window."
       end
       m.fit(history_c, **model.fit_kwargs)
