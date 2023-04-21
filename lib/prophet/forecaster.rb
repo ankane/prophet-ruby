@@ -314,7 +314,7 @@ module Prophet
       # Strip to just dates.
       row_index = dates.map(&:to_date)
 
-      holidays.iter_rows(named: true) do |row|
+      holidays.each_row do |row|
         dt = row["ds"]
         lw = nil
         uw = nil
