@@ -180,7 +180,7 @@ module Prophet
         metrics = valid_metrics
       end
       if (!df.include?("yhat_lower") || !df.include?("yhat_upper")) && metrics.include?("coverage")
-        metrics.drop_in_place("coverage")
+        metrics.delete("coverage")
       end
       if metrics.uniq.length != metrics.length
         raise ArgumentError, "Input metrics must be a list of unique values"
@@ -198,7 +198,7 @@ module Prophet
       df_m = df_m.sort("horizon")
       if metrics.include?("mape") && df_m["y"].abs.min < 1e-8
         # logger.info("Skipping MAPE because y close to 0")
-        metrics.drop_in_place("mape")
+        metrics.delete("mape")
       end
       if metrics.length == 0
         return nil
@@ -309,7 +309,7 @@ module Prophet
     def self.rmse(df, w)
       res = mse(df, w)
       res["rmse"] = res["mse"].sqrt
-      res.drop_in_place("mse")
+      res.delete("mse")
       res
     end
 

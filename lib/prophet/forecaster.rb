@@ -296,7 +296,7 @@ module Prophet
         # Add holiday names in fit but not in predict with ds as NA
         holidays_to_add = Polars::DataFrame.new({
           "ds" => nil,
-          "holiday" => @train_holiday_names.filter(@train_holiday_names.is_in(all_holidays["holiday"])._not)
+          "holiday" => @train_holiday_names[@train_holiday_names.is_in(all_holidays["holiday"])._not]
         })
         if holidays_to_add.size > 0
           holidays_to_add["ds"] = holidays_to_add["ds"].cast(Polars::Date)
@@ -1112,7 +1112,7 @@ module Prophet
           v = instance_variable_get("@#{attribute}")
 
           v = v.dup
-          v.drop_in_place("col") if v.include?("col")
+          v.delete("col") if v.include?("col")
 
           fields =
             v.get_columns.map do |v|

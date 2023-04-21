@@ -348,7 +348,7 @@ class ProphetTest < Minitest::Test
 
   def test_missing_columns
     df = load_example
-    df.drop_in_place("y")
+    df.delete("y")
     m = Prophet.new
     error = assert_raises(ArgumentError) do
       m.fit(df)
