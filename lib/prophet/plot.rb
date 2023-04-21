@@ -124,7 +124,7 @@ module Prophet
 
       # Some work because matplotlib does not handle timedelta
       # Target ~10 ticks.
-      tick_w = df_none["horizon"].cast(Polars::Int64) / 10.0
+      tick_w = df_none["horizon"].max * 1e9 / 10.0
       # Find the largest time resolution that has <1 unit per bin.
       dts = ["D", "h", "m", "s", "ms", "us", "ns"]
       dt_names = ["days", "hours", "minutes", "seconds", "milliseconds", "microseconds", "nanoseconds"]
