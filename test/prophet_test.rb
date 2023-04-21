@@ -358,7 +358,7 @@ class ProphetTest < Minitest::Test
 
   def test_updating_fitted_model
     df = load_example
-    df1 = df[Polars.col("ds") <= "2016-01-19"] # All data except the last day
+    df1 = df[df["ds"] <= "2016-01-19"] # All data except the last day
     m1 = Prophet.new.fit(df1) # A model fit to all data except the last day
 
     m2 = Prophet.new.fit(df) # Adding the last day, fitting from scratch
