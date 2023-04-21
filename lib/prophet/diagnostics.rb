@@ -195,7 +195,7 @@ module Prophet
       else
         df_m["horizon"] = df_m["ds"] - df_m["cutoff"]
       end
-      df_m = df_m.sort("horizon")
+      df_m.sort!("horizon")
       if metrics.include?("mape") && df_m["y"].abs.min < 1e-8
         # logger.info("Skipping MAPE because y close to 0")
         metrics.delete("mape")
