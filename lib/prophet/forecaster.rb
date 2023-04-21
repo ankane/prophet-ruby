@@ -1086,7 +1086,7 @@ module Prophet
           d = {
             "name" => "ds",
             "index" => v.size.times.to_a,
-            "data" => v.to_a.map { |v| v.iso8601(3) }
+            "data" => v.to_a.map { |v| v.iso8601(3).chomp("Z") }
           }
           model_dict[attribute] = JSON.generate(d)
         end
