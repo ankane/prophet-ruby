@@ -552,7 +552,7 @@ module Prophet
       first = @history["ds"].min
       last = @history["ds"].max
       dt = @history["ds"].diff
-      min_dt = dt.cast(Polars::Int64).min / 1000000000
+      min_dt = dt.min
 
       days = 86400
 
