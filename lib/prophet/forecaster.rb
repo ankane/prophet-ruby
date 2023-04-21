@@ -202,7 +202,7 @@ module Prophet
         df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale.to_f
       end
 
-      df["t"] = (df["ds"] - @start).cast(Polars::Int64) / 1000000000 / @t_scale.to_f
+      df["t"] = (df["ds"] - @start).cast(Polars::Int64) / 1e9.to_i / @t_scale.to_f
       if df.include?("y")
         df["y_scaled"] = (df["y"] - df["floor"]) / @y_scale.to_f
       end
