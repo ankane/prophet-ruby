@@ -308,8 +308,7 @@ module Prophet
 
     def self.rmse(df, w)
       res = mse(df, w)
-      res["rmse"] = res["mse"].sqrt
-      res.delete("mse")
+      res["rmse"] = res.delete("mse").sqrt
       res
     end
 
