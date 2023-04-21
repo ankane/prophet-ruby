@@ -107,9 +107,9 @@ module Prophet
       end
       columns.concat(m.extra_regressors.keys)
       columns.concat(m.seasonalities.map { |_, props| props[:condition_name] }.compact)
-      yhat = m.predict(df.filter(index_predicted)[columns])
+      yhat = m.predict(df[index_predicted][columns])
       # Merge yhat(predicts), y(df, original data) and cutoff
-      yhat[predict_columns].hstack(df.filter(index_predicted)[["y"]]).hstack(Polars::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))
+      yhat[predict_columns].hstack(df[index_predicted][["y"]]).hstack(Polars::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))
     end
 
     def self.prophet_copy(m, cutoff = nil)
@@ -273,7 +273,7 @@ module Prophet
       i = hs.length - 1
       while i >= 0
         h_i = hs[i]
-        xs = df.filter(df["h"] == h_i)["x"].to_a
+        xs = df[df["h"] == h_i]["x"].to_a
 
         next_idx_to_add = (h == h_i).to_numo.cast_to(Numo::UInt8).argmax - 1
         while xs.length < w && next_idx_to_add >= 0
