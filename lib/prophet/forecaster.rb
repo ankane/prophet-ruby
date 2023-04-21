@@ -1112,7 +1112,7 @@ module Prophet
           v = instance_variable_get("@#{attribute}")
 
           v = v.dup
-          v.delete("col") if v.include?("col")
+          v.delete("col")
 
           fields =
             v.get_columns.map do |v|
