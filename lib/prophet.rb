@@ -87,7 +87,7 @@ module Prophet
     else
       result.each { |v| v["ds"] = v["ds"].localtime }
     end
-    result.map { |v| [v["ds"], v["yhat"]] }.to_h
+    result.to_h { |v| [v["ds"], v["yhat"]] }
   end
 
   # TODO better name for interval_width
