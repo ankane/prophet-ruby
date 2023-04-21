@@ -180,7 +180,7 @@ module Prophet
         end
       end
 
-      df = df.sort("ds")
+      df.sort!("ds")
 
       initialize_scales(initialize_scales, df)
 
