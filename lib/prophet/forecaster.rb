@@ -291,12 +291,12 @@ module Prophet
       # Drop future holidays not previously seen in training data
       if @train_holiday_names
         # Remove holiday names didn't show up in fit
-        all_holidays = all_holidays[Polars.col("holiday").is_in(@train_holiday_names)]
+        all_holidays = all_holidays[Polars.col("holiday").in?(@train_holiday_names)]
 
         # Add holiday names in fit but not in predict with ds as NA
         holidays_to_add = Polars::DataFrame.new({
           "ds" => nil,
-          "holiday" => @train_holiday_names[@train_holiday_names.is_in(all_holidays["holiday"])._not]
+          "holiday" => @train_holiday_names[@train_holiday_names.in?(all_holidays["holiday"])._not]
         })
         if holidays_to_add.size > 0
           holidays_to_add["ds"] = holidays_to_add["ds"].cast(Polars::Date)
@@ -518,7 +518,7 @@ module Prophet
     end
 
     def add_group_component(components, name, group)
-      new_comp = components[Polars.col("component").is_in(group)]
+      new_comp = components[Polars.col("component").in?(group)]
       group_cols = new_comp["col"].uniq
       if group_cols.size > 0
         new_comp = Polars::DataFrame.new({"col" => group_cols, "component" => name})

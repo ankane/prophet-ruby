@@ -10,7 +10,7 @@ module Prophet
     end
 
     def make_holidays_df(year_list, country)
-      holidays_df[(Polars.col("country") == country) & (Polars.col("year").is_in(year_list))][["ds", "holiday"]]
+      holidays_df[(Polars.col("country") == country) & (Polars.col("year").in?(year_list))][["ds", "holiday"]]
     end
 
     # TODO improve performance
