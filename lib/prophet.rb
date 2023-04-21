@@ -54,7 +54,7 @@ module Prophet
       elsif day
         "D"
       else
-        diff = (Polars::Series.new(times).sort.diff.cast(Polars::Int64) / 1_000_000_000).to_numo[1..-1]
+        diff = Polars::Series.new(times).sort.diff.to_numo[1..-1]
         min_diff = diff.min.to_i
 
         # could be another common divisor
