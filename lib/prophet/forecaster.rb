@@ -196,7 +196,7 @@ module Prophet
         unless df.include?("cap")
           raise ArgumentError, "Capacities must be supplied for logistic growth in column \"cap\""
         end
-        if (df["cap"] <= df["floor"]).any?
+        if df[df["cap"] <= df["floor"]].size > 0
           raise ArgumentError, "cap must be greater than floor (which defaults to 0)."
         end
         df["cap_scaled"] = (df["cap"] - df["floor"]) / @y_scale.to_f
@@ -291,7 +291,7 @@ module Prophet
       # Drop future holidays not previously seen in training data
       if @train_holiday_names
         # Remove holiday names didn't show up in fit
-        all_holidays = all_holidays[Polars.col("holiday").in?(@train_holiday_names)]
+        all_holidays = all_holidays[all_holidays["holiday"].in?(@train_holiday_names)]
 
         # Add holiday names in fit but not in predict with ds as NA
         holidays_to_add = Polars::DataFrame.new({
@@ -518,7 +518,7 @@ module Prophet
     end
 
     def add_group_component(components, name, group)
-      new_comp = components[Polars.col("component").in?(group)]
+      new_comp = components[components["component"].in?(group)].dup
       group_cols = new_comp["col"].uniq
       if group_cols.size > 0
         new_comp = Polars::DataFrame.new({"col" => group_cols, "component" => name})
