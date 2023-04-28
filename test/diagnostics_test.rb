@@ -22,7 +22,7 @@ class DiagnosticsTest < Minitest::Test
     df_p = Prophet::Diagnostics.performance_metrics(df_cv)
 
     # convert to days
-    df_p["horizon"] /= (1e9 * 86400)
+    df_p["horizon"] = df_p["horizon"].cast(Polars::Int64) / 1e9.to_i / 86400
 
     assert_equal 329, df_p.size
     assert_equal [37, 38], df_p["horizon"].head(2).to_a
