@@ -311,8 +311,8 @@ class ProphetTest < Minitest::Test
     assert_times ["2016-01-21 00:00:00 UTC", "2016-01-22 00:00:00 UTC"], future["ds"].head(2)
   end
 
-  def test_polars
-    df = Polars.read_csv("examples/example_wp_log_peyton_manning.csv")
+  def test_rover
+    df = Rover.read_csv("examples/example_wp_log_peyton_manning.csv")
 
     m = Prophet.new
     m.fit(df, seed: 123)

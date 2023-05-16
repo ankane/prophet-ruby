@@ -17,5 +17,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "cmdstan", ">= 0.2"
   spec.add_dependency "numo-narray", ">= 0.9.1.7" # for percentile
-  spec.add_dependency "polars-df" # ">= 0.5.0"
+  spec.add_dependency "polars-df", ">= 0.5"
 end
