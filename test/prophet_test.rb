@@ -377,9 +377,23 @@ class ProphetTest < Minitest::Test
   end
 
   def test_holidays_and_regressor
-    m = Prophet.new
-    m.add_country_holidays('GB')
-    m.add_regressor('precipitation_intensity')
+    holidays =  Rover::DataFrame.new({
+      "holiday" => "playoff",
+      "ds" => ["2008-01-13"]
+    })
+    m = Prophet.new(holidays: holidays)
+    m.add_country_holidays("GB")
+    m.add_regressor("precipitation_intensity")
+
+    error = assert_raises(ArgumentError) do
+      m.add_regressor("New Year's Day")
+    end
+    assert_equal "Name \"New Year's Day\" is a holiday name in \"GB\".", error.message
+
+    error = assert_raises(ArgumentError) do
+      m.add_regressor("playoff")
+    end
+    assert_equal "Name \"playoff\" already used for a holiday.", error.message
   end
 
   private
