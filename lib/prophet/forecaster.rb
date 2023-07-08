@@ -134,10 +134,10 @@ module Prophet
       if reserved_names.include?(name)
         raise ArgumentError, "Name #{name.inspect} is reserved."
       end
-      if check_holidays && @holidays && @holidays["holiday"].uniq.include?(name)
+      if check_holidays && @holidays && @holidays["holiday"].uniq.to_a.include?(name)
         raise ArgumentError, "Name #{name.inspect} already used for a holiday."
       end
-      if check_holidays && @country_holidays && get_holiday_names(@country_holidays).include?(name)
+      if check_holidays && @country_holidays && get_holiday_names(@country_holidays).to_a.include?(name)
         raise ArgumentError, "Name #{name.inspect} is a holiday name in #{@country_holidays.inspect}."
       end
       if check_seasonalities && @seasonalities[name]
