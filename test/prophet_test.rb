@@ -376,6 +376,12 @@ class ProphetTest < Minitest::Test
     plot(m, forecast, "outliers")
   end
 
+  def test_holidays_and_regressor
+    m = Prophet.new
+    m.add_country_holidays('GB')
+    m.add_regressor('precipitation_intensity')
+  end
+
   private
 
   def stan_init(m)
