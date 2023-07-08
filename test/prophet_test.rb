@@ -377,23 +377,56 @@ class ProphetTest < Minitest::Test
   end
 
   def test_holidays_and_regressor
+    m = Prophet.new
+    m.add_country_holidays("GB")
+    m.add_regressor("precipitation_intensity")
+  end
+
+  def test_add_regressor_reserved
+    m = Prophet.new
+    error = assert_raises(ArgumentError) do
+      m.add_regressor("trend")
+    end
+    assert_equal "Name \"trend\" is reserved.", error.message
+  end
+
+  def test_add_regressor_holidays
     holidays =  Rover::DataFrame.new({
       "holiday" => "playoff",
       "ds" => ["2008-01-13"]
     })
     m = Prophet.new(holidays: holidays)
-    m.add_country_holidays("GB")
-    m.add_regressor("precipitation_intensity")
-
-    error = assert_raises(ArgumentError) do
-      m.add_regressor("New Year's Day")
-    end
-    assert_equal "Name \"New Year's Day\" is a holiday name in \"GB\".", error.message
-
     error = assert_raises(ArgumentError) do
       m.add_regressor("playoff")
     end
     assert_equal "Name \"playoff\" already used for a holiday.", error.message
+  end
+
+  def test_add_regressor_country_holidays
+    m = Prophet.new
+    m.add_country_holidays("GB")
+    error = assert_raises(ArgumentError) do
+      m.add_regressor("New Year's Day")
+    end
+    assert_equal "Name \"New Year's Day\" is a holiday name in \"GB\".", error.message
+  end
+
+  def test_add_regressor_seasonality
+    m = Prophet.new
+    m.add_seasonality(name: "monthly", period: 30.5, fourier_order: 5)
+    error = assert_raises(ArgumentError) do
+      m.add_regressor("monthly")
+    end
+    assert_equal "Name \"monthly\" already used for a seasonality.", error.message
+  end
+
+  def test_add_seasonality_regressor
+    m = Prophet.new
+    m.add_regressor("monthly")
+    error = assert_raises(ArgumentError) do
+      m.add_seasonality(name: "monthly", period: 30.5, fourier_order: 5)
+    end
+    assert_equal "Name \"monthly\" already used for an added regressor.", error.message
   end
 
   private
