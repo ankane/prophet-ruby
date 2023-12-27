@@ -214,7 +214,7 @@ class ProphetTest < Minitest::Test
     df = load_example
 
     nfl_sunday = lambda do |ds|
-      date = ds.respond_to?(:to_date) ? ds.to_date : Date.parse(ds)
+      date = Date.parse(ds.to_s)
       date.wday == 0 && (date.month > 8 || date.month < 2) ? 1 : 0
     end
 
