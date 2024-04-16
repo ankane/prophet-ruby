@@ -429,6 +429,12 @@ class ProphetTest < Minitest::Test
     assert_equal "Name \"monthly\" already used for an added regressor.", error.message
   end
 
+  def test_scaling
+    df = load_example
+    m = Prophet.new(scaling: "minmax")
+    m.fit(df, seed: 123)
+  end
+
   private
 
   def stan_init(m)

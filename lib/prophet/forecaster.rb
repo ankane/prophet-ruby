@@ -27,7 +27,8 @@ module Prophet
       changepoint_prior_scale: 0.05,
       mcmc_samples: 0,
       interval_width: 0.80,
-      uncertainty_samples: 1000
+      uncertainty_samples: 1000,
+      scaling: "absmax"
     )
       @growth = growth
 
@@ -54,6 +55,10 @@ module Prophet
       @mcmc_samples = mcmc_samples
       @interval_width = interval_width
       @uncertainty_samples = uncertainty_samples
+      if !["absmax", "minmax"].include?(scaling)
+        raise ArgumentError, "scaling must be one of \"absmax\" or \"minmax\""
+      end
+      @scaling = scaling
 
       # Set during fitting or by other methods
       @start = nil
@@ -189,7 +194,11 @@ module Prophet
           raise ArgumentError, "Expected column \"floor\"."
         end
       else
-        df["floor"] = 0
+        if @scaling == "absmax"
+          df["floor"] = 0
+        elsif @scaling == "minmax"
+          df["floor"] = @y_min
+        end
       end
 
       if @growth == "logistic"
@@ -219,11 +228,22 @@ module Prophet
 
       if @growth == "logistic" && df.include?("floor")
         @logistic_floor = true
-        floor = df["floor"]
+        if @scaling == "absmax"
+          @y_min = (df["y"] - df["floor"]).abs.min.to_f
+          @y_scale = (df["y"] - df["floor"]).abs.max.to_f
+        elsif @scaling == "minmax"
+          @y_min = df["floor"].min
+          @y_scale = (df["cap"].max - @y_min).to_f
+        end
       else
-        floor = 0.0
+        if @scaling == "absmax"
+          @y_min = 0.0
+          @y_scale = df["y"].abs.max.to_f
+        elsif @scaling == "minmax"
+          @y_min = df["y"].min
+          @y_scale =  (df["y"].max - @y_min).to_f
+        end
       end
-      @y_scale = (df["y"] - floor).abs.max
       @y_scale = 1 if @y_scale == 0
       @start = df["ds"].min
       @t_scale = df["ds"].max - @start
@@ -1052,7 +1072,7 @@ module Prophet
       "yearly_seasonality", "weekly_seasonality", "daily_seasonality",
       "seasonality_mode", "seasonality_prior_scale", "changepoint_prior_scale",
       "holidays_prior_scale", "mcmc_samples", "interval_width", "uncertainty_samples",
-      "y_scale", "logistic_floor", "country_holidays", "component_modes"
+      "y_scale", "y_min", "scaling", "logistic_floor", "country_holidays", "component_modes"
     ]
 
     PD_SERIES = ["changepoints", "history_dates", "train_holiday_names"]
@@ -1168,6 +1188,12 @@ module Prophet
       require "json"
 
       model_dict = JSON.parse(model_json)
+
+      # handle_simple_attributes_backwards_compat
+      if !model_dict["scaling"]
+        model_dict["scaling"] = "absmax"
+        model_dict["y_min"] = 0.0
+      end
 
       # We will overwrite all attributes set in init anyway
       model = Prophet.new

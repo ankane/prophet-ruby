@@ -1,3 +1,7 @@
+## 0.5.1 (unreleased)
+
+- Added `scaling` option
+
 ## 0.5.0 (2023-09-05)
 
 - Added support for Polars
