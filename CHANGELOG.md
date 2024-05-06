@@ -2,6 +2,7 @@
 
 - Added `scaling` option
 - Fixed issue with yearly seasonality being enabled without enough data
+- Fixed issue with internal columns in `predict` output (`col`, `col_lower`, and `col_upper`)
 
 ## 0.5.0 (2023-09-05)
 
