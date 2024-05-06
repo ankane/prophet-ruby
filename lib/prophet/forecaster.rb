@@ -567,7 +567,7 @@ module Prophet
       days = 86400
 
       # Yearly seasonality
-      yearly_disable = last - first < 370 * days
+      yearly_disable = last - first < 730 * days
       fourier_order = parse_seasonality_args("yearly", @yearly_seasonality, yearly_disable, 10)
       if fourier_order > 0
         @seasonalities["yearly"] = {

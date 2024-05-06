@@ -1,6 +1,7 @@
 ## 0.5.1 (unreleased)
 
 - Added `scaling` option
+- Fixed issue with yearly seasonality
 
 ## 0.5.0 (2023-09-05)
 
