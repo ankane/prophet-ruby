@@ -827,7 +827,7 @@ module Prophet
 
       x = seasonal_features.to_numo
       data = {}
-      component_cols.vector_names.each do |component|
+      (component_cols.vector_names - ["col"]).each do |component|
         beta_c =  @params["beta"] * component_cols[component].to_numo
 
         comp = x.dot(beta_c.transpose)
