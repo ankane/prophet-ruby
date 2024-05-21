@@ -10,7 +10,7 @@ Supports:
 
 And gracefully handles missing data
 
-[![Build Status](https://github.com/ankane/prophet-ruby/workflows/build/badge.svg?branch=master)](https://github.com/ankane/prophet-ruby/actions)
+[![Build Status](https://github.com/ankane/prophet-ruby/actions/workflows/build.yml/badge.svg)](https://github.com/ankane/prophet-ruby/actions)
 
 ## Installation
 
