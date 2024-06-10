@@ -454,15 +454,6 @@ m2 = Prophet.new.fit(df, init: stan_init(m1)) # Adding the last day, warm-starti
 
 - [Forecasting at Scale](https://peerj.com/preprints/3190.pdf)
 
-## Upgrading
-
-### 0.2.0
-
-Prophet now uses [Rover](https://github.com/ankane/rover) instead of Daru. Two changes you may need to make are:
-
-- `Rover.read_csv` instead of `Daru::DataFrame.from_csv`
-- `df[["ds", "yhat"]]` instead of `df["ds", "yhat"]`
-
 ## Credits
 
 This library was ported from the [Prophet Python library](https://github.com/facebook/prophet) and is available under the same license.
