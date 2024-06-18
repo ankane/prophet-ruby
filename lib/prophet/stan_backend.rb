@@ -148,14 +148,14 @@ module Prophet
     def platform
       if Gem.win_platform?
         "windows"
-      elsif RbConfig::CONFIG["host_os"] =~ /darwin/i
-        if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+      elsif RbConfig::CONFIG["host_os"].match?(/darwin/i)
+        if RbConfig::CONFIG["host_cpu"].match?(/arm|aarch64/i)
           "arm64-darwin"
         else
           "x86_64-darwin"
         end
       else
-        if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+        if RbConfig::CONFIG["host_cpu"].match?(/arm|aarch64/i)
           "aarch64-linux"
         else
           "x86_64-linux"

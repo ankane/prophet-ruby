@@ -63,14 +63,14 @@ namespace :vendor do
   task :platform do
     if Gem.win_platform?
       download_platform("x64-mingw")
-    elsif RbConfig::CONFIG["host_os"] =~ /darwin/i
-      if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+    elsif RbConfig::CONFIG["host_os"].match?(/darwin/i)
+      if RbConfig::CONFIG["host_cpu"].match?(/arm|aarch64/i)
         download_platform("arm64-darwin")
       else
         download_platform("x86_64-darwin")
       end
     else
-      if RbConfig::CONFIG["host_cpu"] =~ /arm|aarch64/i
+      if RbConfig::CONFIG["host_cpu"].match?(/arm|aarch64/i)
         download_platform("aarch64-linux")
       else
         download_platform("x86_64-linux")
