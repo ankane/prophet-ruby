@@ -259,7 +259,7 @@ module Prophet
       end
       ax.grid(true, which: "major", c: "gray", ls: "-", lw: 1, alpha: 0.2)
       months = dates.MonthLocator.new((1..12).to_a, bymonthday: 1, interval: 2)
-      ax.xaxis.set_major_formatter(ticker.FuncFormatter.new(lambda { |x, pos=nil| dates.num2date(x).strftime("%B %-e") }))
+      ax.xaxis.set_major_formatter(ticker.FuncFormatter.new(lambda { |x, pos = nil| dates.num2date(x).strftime("%B %-e") }))
       ax.xaxis.set_major_locator(months)
       ax.set_xlabel("Day of year")
       ax.set_ylabel(name)
@@ -301,7 +301,7 @@ module Prophet
       else
         fmt_str = "%m/%d"
       end
-      ax.xaxis.set_major_formatter(ticker.FuncFormatter.new(lambda { |x, pos=nil| dates.num2date(x).strftime(fmt_str) }))
+      ax.xaxis.set_major_formatter(ticker.FuncFormatter.new(lambda { |x, pos = nil| dates.num2date(x).strftime(fmt_str) }))
       ax.set_xlabel("ds")
       ax.set_ylabel(name)
       if @seasonalities[name][:mode] == "multiplicative"

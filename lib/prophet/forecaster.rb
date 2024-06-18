@@ -129,7 +129,7 @@ module Prophet
       reserved_names = [
         "trend", "additive_terms", "daily", "weekly", "yearly",
         "holidays", "zeros", "extra_regressors_additive", "yhat",
-        "extra_regressors_multiplicative", "multiplicative_terms",
+        "extra_regressors_multiplicative", "multiplicative_terms"
       ]
       rn_l = reserved_names.map { |n| "#{n}_lower" }
       rn_u = reserved_names.map { |n| "#{n}_upper" }
