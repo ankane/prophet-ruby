@@ -1,3 +1,7 @@
+## 0.5.2 (unreleased)
+
+- Fixed warning with `plot`
+
 ## 0.5.1 (2024-05-06)
 
 - Added `scaling` option

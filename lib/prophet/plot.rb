@@ -313,6 +313,7 @@ module Prophet
     def set_y_as_percent(ax)
       yticks = 100 * ax.get_yticks
       yticklabels = yticks.tolist.map { |y| "%.4g%%" % y }
+      ax.set_yticks(ax.get_yticks.tolist)
       ax.set_yticklabels(yticklabels)
       ax
     end
