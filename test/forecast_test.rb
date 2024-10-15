@@ -109,6 +109,12 @@ class ForecastTest < Minitest::Test
     require "active_support"
     require "active_support/time"
 
+    if ActiveSupport::VERSION::STRING.to_f == 8.0
+      ActiveSupport.to_time_preserves_timezone = :zone
+    elsif ActiveSupport::VERSION::STRING.to_f == 7.2
+      ActiveSupport.to_time_preserves_timezone = true
+    end
+
     series = {}
     time = ActiveSupport::TimeZone["Eastern Time (US & Canada)"].parse("2018-04-01")
     192.times do
