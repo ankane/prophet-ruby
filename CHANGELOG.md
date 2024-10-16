@@ -1,6 +1,6 @@
 ## 0.5.2 (unreleased)
 
-- Fixed warning with `plot`
+- Fixed warning with `plot` method
 
 ## 0.5.1 (2024-05-06)
 
