@@ -1,3 +1,7 @@
+## 0.5.3 (unreleased)
+
+- Fixed warning with Ruby 3.4
+
 ## 0.5.2 (2024-10-26)
 
 - Fixed warning with `plot` method
