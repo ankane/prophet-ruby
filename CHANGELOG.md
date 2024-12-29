@@ -1,4 +1,4 @@
-## 0.5.3 (unreleased)
+## 0.5.3 (2024-12-29)
 
 - Fixed warning with Ruby 3.4
 
