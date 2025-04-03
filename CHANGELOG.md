@@ -1,5 +1,6 @@
 ## 0.6.0 (unreleased)
 
+- Updated holidays
 - Dropped support for Ruby < 3.2
 
 ## 0.5.3 (2024-12-29)
