@@ -46,8 +46,8 @@ class DiagnosticsTest < Minitest::Test
     cutoffs = ["2013-02-15", "2013-08-15", "2014-02-15"].map { |v| Time.parse("#{v} 00:00:00 UTC") }
     df_cv2 = Prophet::Diagnostics.cross_validation(m, cutoffs: cutoffs, horizon: "365 days")
     assert_equal 1090, df_cv2.size
-    assert_times ["2013-02-15 00:00:00 UTC"], df_cv2["cutoff"].first
-    assert_times ["2014-02-15 00:00:00 UTC"], df_cv2["cutoff"].last
+    assert_times ["2013-02-15 00:00:00 UTC"], df_cv2["cutoff"].first(1)
+    assert_times ["2014-02-15 00:00:00 UTC"], df_cv2["cutoff"].last(1)
   end
 
   def test_performance_metrics_invalid
