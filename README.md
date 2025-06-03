@@ -351,7 +351,7 @@ forecast = m.predict(future)
 
 ## Diagnostics
 
-[Explanation](http://facebook.github.io/prophet/docs/diagnostics.html)
+[Explanation](https://facebook.github.io/prophet/docs/diagnostics.html)
 
 Cross validation
 
