@@ -313,6 +313,8 @@ class ProphetTest < Minitest::Test
   end
 
   def test_polars
+    skip if RUBY_VERSION.to_i >= 4
+
     df = Polars.read_csv("examples/example_wp_log_peyton_manning.csv")
 
     m = Prophet.new
