@@ -8,7 +8,7 @@ gem "daru"
 gem "matrix" # for daru
 gem "polars-df" if RUBY_VERSION.to_i < 4
 gem "matplotlib", require: false # for ci
-gem "fiddle", require: false # for matplotlib
+gem "fiddle", require: false # for pycall/matplotlib
 gem "activesupport"
 gem "tzinfo-data"
 
