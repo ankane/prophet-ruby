@@ -6,7 +6,7 @@ gem "rake"
 gem "minitest"
 gem "daru"
 gem "matrix" # for daru
-gem "polars-df" if RUBY_VERSION.to_i < 4
+gem "polars-df"
 gem "matplotlib", require: false # for ci
 gem "fiddle", require: false # for pycall/matplotlib
 gem "activesupport"
