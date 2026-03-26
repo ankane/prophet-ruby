@@ -1,3 +1,7 @@
+## 0.7.0 (unreleased)
+
+- Dropped support for Ruby < 3.3
+
 ## 0.6.0 (2025-04-03)
 
 - Updated holidays
