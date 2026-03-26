@@ -1013,9 +1013,7 @@ module Prophet
     private
 
     def convert_df(df)
-      if defined?(Daru::DataFrame) && df.is_a?(Daru::DataFrame)
-        Rover::DataFrame.new(df.to_h)
-      elsif defined?(Polars::DataFrame) && df.is_a?(Polars::DataFrame)
+      if defined?(Polars::DataFrame) && df.is_a?(Polars::DataFrame)
         Rover::DataFrame.new(df.to_h(as_series: false))
       else
         df
