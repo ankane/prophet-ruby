@@ -18,5 +18,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "cmdstan", ">= 0.2"
   spec.add_dependency "logger"
   spec.add_dependency "numo-narray-alt", ">= 0.10"
-  spec.add_dependency "rover-df"
+  spec.add_dependency "rover-df", ">= 1"
 end
