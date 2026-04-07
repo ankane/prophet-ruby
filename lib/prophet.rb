@@ -1,10 +1,10 @@
 # dependencies
 require "cmdstan"
+require "logger"
 require "numo/narray/alt"
 require "rover"
 
 # stdlib
-require "logger"
 require "set"
 
 # modules
