@@ -106,7 +106,7 @@ module Prophet
         end
       end
       columns.concat(m.extra_regressors.keys)
-      columns.concat(m.seasonalities.map { |_, props| props[:condition_name] }.compact)
+      columns.concat(m.seasonalities.filter_map { |_, props| props[:condition_name] })
       yhat = m.predict(df[index_predicted][columns])
       # Merge yhat(predicts), y(df, original data) and cutoff
       yhat[predict_columns].merge(df[index_predicted][["y"]]).merge(Rover::DataFrame.new({"cutoff" => [cutoff] * yhat.length}))

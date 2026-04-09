@@ -31,7 +31,7 @@ module Prophet
     # check type to determine output format
     # check for before converting to time
     keys = series.keys
-    dates = keys.all? { |k| k.is_a?(Date) }
+    dates = keys.all?(Date)
     time_zone = keys.first.time_zone if keys.first.respond_to?(:time_zone)
     utc = keys.first.utc? if keys.first.respond_to?(:utc?)
     times = keys.map(&:to_time)
